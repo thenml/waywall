@@ -338,6 +338,6 @@ waywall.listen("state", function()
     -- end
 end)
 
--- require("takeabreak/init")(config, c.key.takeabreak)
+require("takeabreak/init")(config, c.key.takeabreak)
 
 return config

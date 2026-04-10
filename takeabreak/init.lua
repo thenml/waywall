@@ -25,7 +25,6 @@ return function (config, key)
 				return
 			end
 			if img == nil then
-				next_time = waywall.current_time() + cfg.minutes * 60 * 1000
 				img = waywall.image(cfg.image, {
 					dst = { x = 0, y = 0, w = 1920, h = 1080 },
 				})
@@ -37,17 +36,14 @@ return function (config, key)
 	end)
 
 	config.actions[key] = function()
-		local state = waywall.state()
-		if state.screen == "title" then
-			if img ~= nil then
-				next_time = waywall.current_time()
-				img:close()
-				img = nil
-			end
-			if text ~= nil then
-				text:close()
-				text = nil
-			end
+		if img ~= nil then
+			next_time = waywall.current_time() + cfg.minutes * 60 * 1000
+			img:close()
+			img = nil
+		end
+		if text ~= nil then
+			text:close()
+			text = nil
 		end
 		return false
 	end
