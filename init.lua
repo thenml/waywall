@@ -209,7 +209,7 @@ end
 local chat_text = make_text("keymap paused", {
     x = 0, y = 1065,
     size = 1,
-    color = "#ffffff88",
+    color = "#ffffff33",
 })
 local chat_key = function(key)
     return function()

@@ -34,18 +34,3 @@ plugin:darkwindow {
     }
 }
 ```
-
-## glfw
-
-```bash
-# clone GLFW
-git clone https://github.com/glfw/glfw
-cd glfw
-
-# compile GLFW
-cmake -S . -B build -DBUILD_SHARED_LIBS=ON -DGLFW_BUILD_WAYLAND=ON
-cd build
-make
-```
-
-yes i used master branch

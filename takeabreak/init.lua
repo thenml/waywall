@@ -6,7 +6,7 @@ local cfg = {
 		x = 0,
 		y = 100,
 		size = 1,
-		color = "#888888",
+		color = "#ffffff88",
 	}
 }
 
