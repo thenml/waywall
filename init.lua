@@ -1,219 +1,49 @@
 -- ==== IMPORTS ====
+
 local waywall = require("waywall")
 local helpers = require("waywall.helpers")
 local c = require("config")
+local u = require("utils")
+
 
 -- ==== HELPERS ====
+
 local change_sens = c.sens ~= nil
 local change_dpi = c.dpi ~= nil
 local active_remap = "default"
 
-local is_running = function(regex)
-    local handle = io.popen("pgrep -f '" .. regex .. "'")
-    local result = handle:read("*l")
-    handle:close()
-    return result ~= nil
-end
-
-local set_dpi = function(dpi)
-    local handle = io.popen("echo " .. dpi .. " > /tmp/solaar-watch-set")
-    local result = handle:read("*l")
-    handle:close()
-    return result ~= nil
-end
-
-local set_sens = function(sens)
-    waywall.set_sensitivity(sens)
-end
-
-local read_file = function(name)
-    local home = os.getenv("HOME")
-
-    local file = io.open(home .. "/.config/waywall/" .. name, "r")
-    local data = file:read("*a")
-    file:close()
-
-    return data
-end
-
 local ensure_running = function()
-    if not is_running("tmp-saves\\.sh") then
+    if not u.is_running("tmp-saves\\.sh") then
         waywall.exec("bash " .. c.path.tmp_saves .. " -w")
+        return true
     end
-    if not is_running("Ninjabrain.*\\.jar") then
+    if not u.is_running("Ninjabrain.*\\.jar") then
         waywall.exec("java -Dawt.useSystemAAFontSettings=on -jar " .. c.path.nb)
         waywall.show_floating(true)
+        return true
     end
-    if change_dpi and not is_running("solaar-watch\\.py") then
+    if change_dpi and not u.is_running("solaar-watch\\.py") then
         waywall.exec("python3 " .. c.path.solaar .. " " .. c.dpi.id .. " DPI")
+        return true
     end
-    if not is_running("NBTrackr.*\\.py") then
-        waywall.exec("nbtrackr")
+    if not u.is_running("NBTrackr.*\\.py") then
+        -- hyprctl dispatch exec to fix x11 issue
+        waywall.exec("hyprctl dispatch exec nbtrackr")
         waywall.sleep(6000)
         waywall.exec("hyprctl dispatch tagwindow +nboverlay class:Tk")
+        return true
     end
 end
 
-local has_state = false
-local ingame_only = function(func)
-    return function()
-        if has_state then
-            return helpers.ingame_only(func)()
-        end
-        return func()
-    end
-end
-
--- https://discord.com/channels/1095808506239651942/1374968058506117130/1451035479288840304
-local starting_mpk = false
-local mpk = function(cfg, config)
-    config.actions[cfg.launch] = function()
-        for _, key in ipairs({ "Tab", "Space", "Tab", "Tab", "Tab", "Space", "Tab", "Space", "Space", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Space" }) do
-            waywall.press_key(key)
-        end
-        starting_mpk = true
-    end
-
-    config.actions[cfg.quit] = function()
-        for _, key in ipairs({ "Esc", "Esc", "Tab", "Space", "Esc", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Space" }) do
-            waywall.press_key(key)
-        end
-    end
-end
-
-
--- ==== MIRRORS ====
-local make_mirror = function(options)
-    local this = nil
-
-    return function(enable)
-        if enable and not this then
-            this = waywall.mirror(options)
-        elseif this and not enable then
-            this:close()
-            this = nil
-        end
-    end
-end
-
-local mirrors = {
-    e = make_mirror({
-        src = { x = 1, y = 37, w = 64, h = 9 },
-        dst = { x = 1225, y = 618, w = 4 * 64, h = 4 * 9 },
-        shader = "text"
-    }),
-
-    eye_measure = make_mirror({
-        src = { x = 155, y = 7902, w = 30, h = 580 },
-        dst = { x = 0, y = 370, w = 790, h = 340 },
-    }),
-
-    pie_percent = make_mirror({
-        src = { x = 247, y = 859, w = 33, h = 25 },
-        dst = { x = 1550, y = 750, w = 132, h = 100 },
-        shader = "text"
-    }),
-
-    pie_chart = make_mirror({
-        src = { x = 0, y = 674, w = 340, h = 178},
-        dst = { x = 1225, y = 650, w = 315, h = 317.25 },
-        shader = "pie_chart",
-    }),
-
-    tall_pie_percent = make_mirror({
-        src = { x = 247, y = 16163, w = 33, h = 25 },
-        dst = { x = 1550, y = 750, w = 132, h = 100 },
-        shader = "text"
-    }),
-
-    tall_pie_chart = make_mirror({
-        src = { x = 0, y = 15978, w = 340, h = 178 },
-        dst = { x = 1225, y = 650, w = 315, h = 317.25 },
-        shader = "pie_chart",
-    }),
-}
-
-
-local make_image = function(path, dst)
-    local this = nil
-
-    return function(enable)
-        if enable and not this then
-            this = waywall.image(path, dst)
-        elseif this and not enable then
-            this:close()
-            this = nil
-        end
-    end
-end
-
-local make_text = function(text, dst)
-    local this = nil
-
-    return function(enable)
-        if enable and not this then
-            this = waywall.text(text, dst)
-        elseif this and not enable then
-            this:close()
-            this = nil
-        end
-    end
-end
-
-local images = {
-    measuring_overlay = make_image(c.path.overlay, {
-        dst = { x = 0, y = 370, w = 790, h = 340 },
-    }),
-    pie_cheatsheet = make_image(c.path.pie_cheatsheet, {
-        dst = { x = 1131, y = 0, w = 1598/2, h = 780/2 },
-    }),
-}
-
-local show_mirrors = function(thin, tall, wide)
-    mirrors.e(thin or tall)
-
-    mirrors.eye_measure(tall)
-    images.measuring_overlay(tall)
-
-    mirrors.pie_percent(thin)
-    mirrors.pie_chart(thin)
-
-    mirrors.tall_pie_percent(tall)
-    mirrors.tall_pie_chart(tall)
-    images.pie_cheatsheet(thin)
-end
-
-local thin_enable = function()
-    show_mirrors(true, false, false)
-    if change_dpi then set_dpi(c.dpi.normal) end
-    if change_sens then set_sens(c.sens.normal) end
-end
-local tall_enable = function()
-    show_mirrors(false, true, false)
-    if change_dpi then set_dpi(c.dpi.tall) end
-    if change_sens then set_sens(c.sens.tall) end
-end
-local wide_enable = function()
-    show_mirrors(false, false, true)
-    if change_dpi then set_dpi(c.dpi.normal) end
-    if change_sens then set_sens(c.sens.normal) end
-end
-
-local res_disable = function()
-    show_mirrors(false, false, false)
-    if change_dpi then set_dpi(c.dpi.normal) end
-    if change_sens then set_sens(c.sens.normal) end
-    waywall.set_remaps(c.remap.default)
-end
-
-local chat_text = make_text("keymap paused", {
+-- paused keymap indicator
+local chat_text = u.make_text("keymap paused", {
     x = 0, y = 1065,
     size = 1,
     color = "#ffffff33",
 })
 local chat_key = function(key)
     return function()
-        if not has_state and active_remap == "chat" then
+        if not u.has_state and active_remap == "chat" then
             waywall.press_key(key)
             waywall.sleep(100)
             waywall.set_remaps(c.remap.default)
@@ -234,30 +64,124 @@ local chat_key = function(key)
 end
 
 
--- ==== RESOLUTIONS ====
-local make_res = function(width, height, enable, disable)
-    return function()
-        local active_width, active_height = waywall.active_res()
+-- ==== MIRRORS ====
 
-        if active_width == width and active_height == height then
-            waywall.set_resolution(0, 0)
-            disable()
-        else
-            waywall.set_resolution(width, height)
-            enable()
-        end
-        return false
-    end
+local pie_border = true
+local mirrors = {
+    e = u.f3_mirror(1, 4, 0, 49, { x = 1225, y = 611, scale = 4 }),
+
+    eye_measure = u.make_mirror({
+        src = { x = 155, y = 7902, w = 30, h = 580 },
+        dst = { x = 0, y = 370, w = 790, h = 340 },
+    }),
+
+    pie_percent = u.text_mirror({
+        src = { x = 248, y = 859, w = 33, h = 36 },
+        dst = { x = 1445, y = 709, scale = 4 }, -- x = pie_chart.x + pie_chart.w / 2 + padding.x, y = pie_chart.y + pie_chart.h / 2 - 3h
+        sx = 4, sy = 4,
+    }),
+
+    pie_chart = u.make_mirror({
+        src = { x = 0, y = 676, w = 340, h = 168},
+        dst = { x = 1225, y = 654, w = 200, h = 200 },
+        shader = pie_border and "pie_chart_thin" or "pie_chart",
+        depth = 1
+    }),
+
+    tall_pie_percent = u.text_mirror({
+        src = { x = 248, y = 16163, w = 33, h = 36 },
+        dst = { x = 1445, y = 709, scale = 4 },
+        sx = 4, sy = 4,
+    }),
+
+    tall_pie_chart = u.make_mirror({
+        src = { x = 0, y = 15980, w = 340, h = 168 },
+        dst = { x = 1225, y = 654, w = 200, h = 200 },
+        shader = pie_border and "pie_chart_tall" or "pie_chart",
+        depth = 1
+    }),
+
+    glowdar = u.text_mirror({
+        src = { x = 1827, y = 859, w = 33, h = 24 }, -- x = 1920 - 210 + 247
+        dst = { x = 1684, y = 709, scale = 4 }, -- x = 1920 - 340 / 2 - 33 * 2 y = 674 + 169 / 2 - 24 * 2
+        sx = 4, sy = 4,
+    }),
+
+    f3block = u.f3_mirror(3, 11, 32, 88),
+    -- f3c = u.f3_mirror(3, 3, 0, 31),
+    -- f3e = u.f3_mirror(3, 4, 0, 49),
+    -- f3chunk = u.f3_mirror(3, 12, 36, 37),
+    -- f3o = u.f3_mirror(3, 17, 57, 11),
+}
+
+
+local images = {
+    measuring_overlay = u.make_image(c.path.overlay, {
+        dst = { x = 0, y = 365, w = 790, h = 350 },
+    }),
+    x_border = u.make_image(c.path.x_border, {
+        dst = { x = 0, y = 1080/2 - 350/2, w = 1920, h = 350 },
+    }),
+    y_border = u.make_image(c.path.y_border, {
+        dst = { x = 1920/2 - 350/2, y = 0, w = 350, h = 1080 },
+    }),
+}
+
+local show_mirrors = function(thin, tall, wide)
+    local normal = not (thin or tall or wide)
+
+    mirrors.e(thin or tall)
+
+    mirrors.eye_measure(tall)
+    images.measuring_overlay(tall)
+
+    mirrors.pie_percent(thin)
+    mirrors.pie_chart(thin)
+    
+    mirrors.tall_pie_percent(tall)
+    mirrors.tall_pie_chart(tall)
+
+    mirrors.glowdar(normal)
+    mirrors.f3block(normal)
+
+    images.x_border(wide)
+    images.y_border(thin or tall)
 end
 
+local thin_enable = function()
+    show_mirrors(true, false, false)
+    if change_dpi then u.set_dpi(c.dpi.normal) end
+    if change_sens then waywall.set_sensitivity(c.sens.normal) end
+end
+local tall_enable = function()
+    show_mirrors(false, true, false)
+    if change_dpi then u.set_dpi(c.dpi.tall) end
+    if change_sens then waywall.set_sensitivity(c.sens.tall) end
+end
+local wide_enable = function()
+    show_mirrors(false, false, true)
+    if change_dpi then u.set_dpi(c.dpi.normal) end
+    if change_sens then waywall.set_sensitivity(c.sens.normal) end
+end
+
+local res_disable = function()
+    show_mirrors(false, false, false)
+    if change_dpi then u.set_dpi(c.dpi.normal) end
+    if change_sens then waywall.set_sensitivity(c.sens.normal) end
+end
+
+
+-- ==== RESOLUTIONS ====
+
 local resolutions = {
-    thin = make_res(340, 1080, thin_enable, res_disable),
-    tall = make_res(340, 16384, tall_enable, res_disable),
-    wide = make_res(1920, 340, wide_enable, res_disable),
+    thin = u.make_res(340, 1080, thin_enable, res_disable),
+    tall = u.make_res(340, 16384, tall_enable, res_disable),
+    wide = u.make_res(1920, 340, wide_enable, res_disable),
 }
 
 
 -- ==== CONFIG ====
+
 local config = {
     input = c.input,
     theme = c.theme
@@ -269,19 +193,31 @@ end
 
 config.shaders = {
     ["pie_chart"] = {
-        vertex = read_file("general.vert"),
-        fragment = read_file("pie_chart.frag"),
+        vertex = u.read_file("shaders/general.vert"),
+        fragment = u.read_file("shaders/pie_chart.frag"),
+    },
+    ["pie_chart_thin"] = {
+        vertex = u.read_file("shaders/general.vert"),
+        fragment = u.read_file("shaders/pie_chart_thin.frag"),
+    },
+    ["pie_chart_tall"] = {
+        vertex = u.read_file("shaders/general.vert"),
+        fragment = u.read_file("shaders/pie_chart_tall.frag"),
     },
     ["text"] = {
-        vertex = read_file("general.vert"),
-        fragment = read_file("text.frag"),
+        vertex = u.read_file("shaders/general.vert"),
+        fragment = u.read_file("shaders/text.frag"),
+    },
+    ["shadow"] = {
+        vertex = u.read_file("shaders/general.vert"),
+        fragment = u.read_file("shaders/text_shadow.frag"),
     },
 }
 
 config.actions = {
-    [c.key.thin] = ingame_only(resolutions.thin),
+    [c.key.thin] = u.ingame_only(resolutions.thin),
     [c.key.tall] = resolutions.tall,
-    [c.key.wide] = ingame_only(resolutions.wide),
+    [c.key.wide] = u.ingame_only(resolutions.wide),
 
     [c.key.toggle_ninbot] = function()
         -- ensure_running()
@@ -290,7 +226,7 @@ config.actions = {
     end,
 
     [c.key.launch_paceman] = function()
-        if not is_running("paceman..*") then
+        if not u.is_running("paceman..*") then
             waywall.exec("java -jar " .. c.path.pacem .. " --nogui")
         end
     end,
@@ -303,27 +239,35 @@ config.actions = {
 
     [c.key.ensure_running] = ensure_running,
 
-    -- no remap when typing
+    -- disable remap when typing
     ["Return"] = chat_key("Enter"),
     ["Slash"] = chat_key("Slash"),
 }
 
-mpk(c.key.mpk, config)
+u.mpk(c.key.mpk, config)
 
 waywall.listen("load", function()
-    waywall.sleep(10)
-    ensure_running()
+    res_disable()
+    waywall.sleep(5000)
+    while ensure_running do
+        waywall.sleep(1000)
+    end
+    if u.has_state == nil then
+        u.has_state = false
+        waywall.state() -- errors if no state present
+        u.has_state = true
+    end
 end)
 
 waywall.listen("state", function()
-    has_state = true
+    u.has_state = true
     local state = waywall.state()
     if state.screen == "inworld" and state.inworld == "unpaused" then
         waywall.set_remaps(c.remap.default)
         chat_text(false)
         active_remap = "default"
-        if starting_mpk then
-            starting_mpk = false
+        if u.starting_mpk then
+            u.starting_mpk = false
             waywall.press_key(c.key.mpk.load)
         end
     end
@@ -332,10 +276,6 @@ waywall.listen("state", function()
         chat_text(true)
         active_remap = "chat"
     end
-    -- if state.inworld == "paused" then
-    --     waywall.set_resolution(0, 0)
-    --     res_disable()
-    -- end
 end)
 
 require("takeabreak/init")(config, c.key.takeabreak)

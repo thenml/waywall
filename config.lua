@@ -41,10 +41,13 @@ return {
 			["Z"] = "LeftShift",
 			["LeftShift"] = "Z",
 		
-			-- d -> f -> x -> d (easier f3 kb)
-			["D"] = "F",
-			["F"] = "X",
+			-- d <-> x; f <-> r; t <-> a (easier f3 kb)
+			["D"] = "X",
 			["X"] = "D",
+			["F"] = "R",
+			["R"] = "F",
+			["T"] = "A",
+			["A"] = "T",
 
 			-- q <-> o (search crafting)
 			["Q"] = "O",
@@ -66,7 +69,8 @@ return {
 		nb = home_path .. "Ninjabrain-Bot-1.5.2.jar",
 		solaar = config_path .. "scripts/solaar-watch.py",
 		tmp_saves = config_path .. "scripts/tmp-saves.sh",
-		overlay = config_path .. "overlay.png",
-		pie_cheatsheet = config_path .. "pies_trans.png",
+		overlay = config_path .. "images/overlay_border.png",
+		x_border = config_path .. "images/x_border.png",
+		y_border = config_path .. "images/y_border.png",
 	}
 }

@@ -9,6 +9,8 @@ usage() {
     exit 1
 }
 
+maps="$HOME/Documents/Minecraft/mcsr/maps"
+
 if [[ "${1:-}" == "--init" || "${1:-}" == "-i" ]]; then
     saves="$2"
 	if [ -z "$saves" ]; then
@@ -31,7 +33,6 @@ fi
 
 if [[ "${1:-}" == "--prepare" || "${1:-}" == "-p" ]]; then
 	echo "Copying saves to /tmp/mcsr"
-	maps=/home/nml/Documents/Minecraft/mcsr/maps
 
 	rm -rf /tmp/mcsr
 	mkdir /tmp/mcsr
