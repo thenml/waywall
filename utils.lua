@@ -135,14 +135,14 @@ utils.ingame_only = function(func)
 end
 
 -- create a function that creates a toggleable text mirror with an optional shadow
--- - options = mirror options & { sx, sy } for shadow offset
+-- - options = mirror options & { sx, sy } for shadow offset & { shadow_shader } for optional shadow shader
 utils.text_mirror = function(options)
-    options.shader = "text"
+    options.shader = options.shader or "text"
     local text = utils.make_mirror(options)
     local shadow = nil
     if options.sx or options.sy then
         local options2 = {
-            src = options.src, shader = "shadow",
+            src = options.src, shader = options.shadow_shader or "shadow",
             dst = { x = options.dst.x + options.sx,  y = options.dst.y + options.sy, w = options.dst.w, h = options.dst.h }
         }
 		if options.dst.scale then

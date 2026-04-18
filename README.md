@@ -20,8 +20,9 @@ this will not work for you unless you have my exact setup (1080p, logitech mouse
 ## hyprland config
 
 ```properties
-windowrule = border_size 0, rounding 0, no_blur on, match:class waywall
+windowrule = border_size 0, rounding 0, no_blur on, workspace 1, match:class waywall
 windowrule = float on, border_size 0, rounding 0, no_blur on, pin on, no_focus on, workspace 1, darkwindow:shade transparentNB, match:tag nboverlay
+layerrule = xray on, order 10, ignore_alpha 0.9, match:tag nboverlay
 
 input {
     sensitivity = -0.75
@@ -29,7 +30,7 @@ input {
 plugin:darkwindow {
     shader[transparentNB] {
         path = /home/nml/.config/waywall/shaders/NBTracker-transparency.glsl
-        args = bkg = [0.121568627 0.137254902 0.168627451] targetOpacity = 0 similarity = 0.7
+        args = bkg = [0 0 0] targetOpacity = 0 similarity = 0.01
         introduces_transparency = true
     }
 }

@@ -78,7 +78,7 @@ local mirrors = {
     pie_percent = u.text_mirror({
         src = { x = 248, y = 859, w = 33, h = 36 },
         dst = { x = 1445, y = 709, scale = 4 }, -- x = pie_chart.x + pie_chart.w / 2 + padding.x, y = pie_chart.y + pie_chart.h / 2 - 3h
-        sx = 4, sy = 4,
+        sx = 4, sy = 4, shader = "pie_text", shadow_shader = "pie_text_shadow"
     }),
 
     pie_chart = u.make_mirror({
@@ -91,7 +91,7 @@ local mirrors = {
     tall_pie_percent = u.text_mirror({
         src = { x = 248, y = 16163, w = 33, h = 36 },
         dst = { x = 1445, y = 709, scale = 4 },
-        sx = 4, sy = 4,
+        sx = 4, sy = 4, shader = "pie_text", shadow_shader = "pie_text_shadow"
     }),
 
     tall_pie_chart = u.make_mirror({
@@ -104,7 +104,7 @@ local mirrors = {
     glowdar = u.text_mirror({
         src = { x = 1827, y = 859, w = 33, h = 24 }, -- x = 1920 - 210 + 247
         dst = { x = 1684, y = 709, scale = 4 }, -- x = 1920 - 340 / 2 - 33 * 2 y = 674 + 169 / 2 - 24 * 2
-        sx = 4, sy = 4,
+        sx = 4, sy = 4, shader = "pie_text", shadow_shader = "pie_text_shadow"
     }),
 
     f3block = u.f3_mirror(3, 11, 32, 88),
@@ -204,6 +204,14 @@ config.shaders = {
         vertex = u.read_file("shaders/general.vert"),
         fragment = u.read_file("shaders/pie_chart_tall.frag"),
     },
+    ["pie_text"] = {
+        vertex = u.read_file("shaders/general.vert"),
+        fragment = u.read_file("shaders/pie_text.frag"),
+    },
+    ["pie_text_shadow"] = {
+        vertex = u.read_file("shaders/general.vert"),
+        fragment = u.read_file("shaders/pie_text_shadow.frag"),
+    },
     ["text"] = {
         vertex = u.read_file("shaders/general.vert"),
         fragment = u.read_file("shaders/text.frag"),
@@ -249,7 +257,7 @@ u.mpk(c.key.mpk, config)
 waywall.listen("load", function()
     res_disable()
     waywall.sleep(5000)
-    while ensure_running do
+    while ensure_running() do
         waywall.sleep(1000)
     end
     if u.has_state == nil then
