@@ -4,7 +4,7 @@ local waywall = require("waywall")
 local helpers = require("waywall.helpers")
 local c = require("config")
 local u = require("utils")
-
+local config = { _ = {} }
 
 -- ==== HELPERS ====
 
@@ -75,13 +75,13 @@ local mirrors = {
         dst = { x = 0, y = 370, w = 790, h = 340 },
     }),
 
-    pie_percent = u.text_mirror({
+    thin_pie_percent = u.text_mirror({
         src = { x = 248, y = 859, w = 33, h = 36 },
         dst = { x = 1445, y = 709, scale = 4 }, -- x = pie_chart.x + pie_chart.w / 2 + padding.x, y = pie_chart.y + pie_chart.h / 2 - 3h
         sx = 4, sy = 4, shader = "pie_text", shadow_shader = "pie_text_shadow"
     }),
 
-    pie_chart = u.make_mirror({
+    thin_pie_chart = u.make_mirror({
         src = { x = 0, y = 676, w = 340, h = 168},
         dst = { x = 1225, y = 654, w = 200, h = 200 },
         shader = pie_border and "pie_chart_thin" or "pie_chart",
@@ -135,8 +135,8 @@ local show_mirrors = function(thin, tall, wide)
     mirrors.eye_measure(tall)
     images.measuring_overlay(tall)
 
-    mirrors.pie_percent(thin)
-    mirrors.pie_chart(thin)
+    mirrors.thin_pie_percent(thin)
+    mirrors.thin_pie_chart(thin)
     
     mirrors.tall_pie_percent(tall)
     mirrors.tall_pie_chart(tall)
@@ -146,6 +146,10 @@ local show_mirrors = function(thin, tall, wide)
 
     images.x_border(wide)
     images.y_border(thin or tall)
+
+    if config._.show_mirrors ~= nil then
+        config._.show_mirrors(thin, tall, wide)
+    end
 end
 
 local thin_enable = function()
@@ -182,10 +186,8 @@ local resolutions = {
 
 -- ==== CONFIG ====
 
-local config = {
-    input = c.input,
-    theme = c.theme
-}
+config.input = c.input
+config.theme = c.theme
 config.input.remaps = c.remap.default
 if change_sens then
     config.input.sensitivity = c.sens.normal
@@ -203,6 +205,18 @@ config.shaders = {
     ["pie_chart_tall"] = {
         vertex = u.read_file("shaders/general.vert"),
         fragment = u.read_file("shaders/pie_chart_tall.frag"),
+    },
+    ["pie_chart_modern"] = {
+        vertex = u.read_file("shaders/general.vert"),
+        fragment = u.read_file("shaders/pie_chart_modern.frag"),
+    },
+    ["pie_chart_modern_shadow"] = {
+        vertex = u.read_file("shaders/general.vert"),
+        fragment = u.read_file("shaders/pie_chart_modern_shadow.frag"),
+    },
+    ["pie_chart_modern_highlight"] = {
+        vertex = u.read_file("shaders/general.vert"),
+        fragment = u.read_file("shaders/pie_chart_modern_highlight.frag"),
     },
     ["pie_text"] = {
         vertex = u.read_file("shaders/general.vert"),
@@ -287,5 +301,10 @@ waywall.listen("state", function()
 end)
 
 require("takeabreak/init")(config, c.key.takeabreak)
+
+config._ = {
+    mirrors = mirrors,
+    cfg = c,
+}
 
 return config

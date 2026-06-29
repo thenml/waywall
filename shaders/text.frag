@@ -18,6 +18,7 @@ uniform sampler2D u_texture;
 const float threshold = 0.01;
 
 const vec3 ecounter = vec3(0.867, 0.867, 0.867);
+const vec3 ecounter_alt = vec3(0.878, 0.878, 0.878); // modern versions
 const vec3 entities = vec3(0.882, 0.271, 0.761);
 const vec3 blockentities = vec3(0.914, 0.427, 0.302);
 const vec3 unspecified = vec3(0.271, 0.796, 0.396);
@@ -27,12 +28,13 @@ void main() {
     vec4 color = texture2D(u_texture, f_src_pos);
 
     bool is_ecounter = all(lessThan(abs(color.rgb - ecounter), vec3(threshold)));
+    bool is_ecounter_alt = all(lessThan(abs(color.rgb - ecounter_alt), vec3(threshold)));
     bool is_entities = all(lessThan(abs(color.rgb - entities), vec3(threshold)));
     bool is_blockentities = all(lessThan(abs(color.rgb - blockentities), vec3(threshold)));
     bool is_unspecified = all(lessThan(abs(color.rgb - unspecified), vec3(threshold)));
     bool is_mobspawner = all(lessThan(abs(color.rgb - mobspawner), vec3(threshold)));
 
-    if ( is_ecounter ) {
+    if ( is_ecounter || is_ecounter_alt ) {
         gl_FragColor = text_color;
     }
     else if ( is_entities ) {

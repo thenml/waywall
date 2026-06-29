@@ -34,12 +34,17 @@ fi
 if [[ "${1:-}" == "--prepare" || "${1:-}" == "-p" ]]; then
 	echo "Copying saves to /tmp/mcsr"
 
-	rm -rf /tmp/mcsr
-	mkdir /tmp/mcsr
-	ls $maps | while read -r i; do
-		ln -s "$maps/$i" "/tmp/mcsr/a$i"
-	done
-	chown $USER:$USER -R /tmp/mcsr
+	# remove if exists
+	if [[ -d /tmp/mcsr ]]; then
+		echo "/tmp/mcsr already exists"
+	else
+		rm -rf /tmp/mcsr
+		mkdir /tmp/mcsr
+		ls $maps | while read -r i; do
+			ln -s "$maps/$i" "/tmp/mcsr/a$i"
+		done
+		chown $USER:$USER -R /tmp/mcsr
+	fi
 	exit 0
 fi
 

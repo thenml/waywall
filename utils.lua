@@ -176,7 +176,7 @@ utils.f3_mirror = function(gui_scale, line, x, w, dst)
         dst.w = src.w
         dst.h = src.h
     end
-    return utils.text_mirror({ src = src, dst = dst, sx = gui_scale * (dst.scale or 1), sy = gui_scale * (dst.scale or 1) })
+    return utils.text_mirror({ src = src, dst = dst, sx = gui_scale * (dst.scale or 1), sy = gui_scale * (dst.scale or 1), shader = dst.shader })
 end
 
 return utils
