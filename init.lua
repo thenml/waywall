@@ -2,51 +2,28 @@
 
 local waywall = require("waywall")
 local helpers = require("waywall.helpers")
-local c = require("config")
-local u = require("utils")
-local config = { _ = {} }
+local options = require("options")
+local utils = require("utils")
+local screen = require("screen")
 
 -- ==== HELPERS ====
 
-local change_sens = c.sens ~= nil
-local change_dpi = c.dpi ~= nil
+-- currently active remap
 local active_remap = "default"
 
-local ensure_running = function()
-    if not u.is_running("tmp-saves\\.sh") then
-        waywall.exec("bash " .. c.path.tmp_saves .. " -w")
-        return true
-    end
-    if not u.is_running("Ninjabrain.*\\.jar") then
-        waywall.exec("java -Dawt.useSystemAAFontSettings=on -jar " .. c.path.nb)
-        waywall.show_floating(true)
-        return true
-    end
-    if change_dpi and not u.is_running("solaar-watch\\.py") then
-        waywall.exec("python3 " .. c.path.solaar .. " " .. c.dpi.id .. " DPI")
-        return true
-    end
-    if not u.is_running("NBTrackr.*\\.py") then
-        -- hyprctl dispatch exec to fix x11 issue
-        waywall.exec("hyprctl dispatch exec nbtrackr")
-        waywall.sleep(6000)
-        waywall.exec("hyprctl dispatch tagwindow +nboverlay class:Tk")
-        return true
-    end
-end
-
 -- paused keymap indicator
-local chat_text = u.make_text("keymap paused", {
-    x = 0, y = 1065,
+local chat_text = utils.make_text({
+    text = "keymap paused",
+    dst = { pos_anchor = "bottomleft", item_anchor = "bottomleft" },
     size = 1,
-    color = "#ffffff33",
+    color = "ffffff7f"
 })
-local chat_key = function(key)
+local function chat_key(key)
     return function()
-        if not u.has_state and active_remap == "chat" then
+        if not utils.has_state and active_remap == "chat" then
             waywall.press_key(key)
             waywall.sleep(100)
-            waywall.set_remaps(c.remap.default)
+            waywall.set_remaps(options.remapped_kb)
             active_remap = "default"
             chat_text(false)
             return false
@@ -54,7 +31,7 @@ local chat_key = function(key)
         if active_remap ~= "chat" then
             waywall.press_key(key)
             waywall.sleep(100)
-            waywall.set_remaps({})
+            waywall.set_remaps(options.normal_kb)
             active_remap = "chat"
             chat_text(true)
             return false
@@ -63,248 +40,244 @@ local chat_key = function(key)
     end
 end
 
+local current_sens = options.sens._normal
+local function res_enable(current)
+    local sens = options.sens[current] ---@cast sens number
+    if sens ~= current_sens then
+        if sens == nil then
+            sens = options.sens._normal
+        end
 
--- ==== MIRRORS ====
+        if options.sens._use_maccel then
+            waywall.exec("maccel set param sens_mult " .. sens)
+        else
+            waywall.set_sensitivity(sens)
+        end
 
-local pie_border = true
-local mirrors = {
-    e = u.f3_mirror(1, 4, 0, 49, { x = 1225, y = 611, scale = 4 }),
+        current_sens = sens
+    end
 
-    eye_measure = u.make_mirror({
-        src = { x = 155, y = 7902, w = 30, h = 580 },
-        dst = { x = 0, y = 370, w = 790, h = 340 },
-    }),
-
-    thin_pie_percent = u.text_mirror({
-        src = { x = 248, y = 859, w = 33, h = 36 },
-        dst = { x = 1445, y = 709, scale = 4 }, -- x = pie_chart.x + pie_chart.w / 2 + padding.x, y = pie_chart.y + pie_chart.h / 2 - 3h
-        sx = 4, sy = 4, shader = "pie_text", shadow_shader = "pie_text_shadow"
-    }),
-
-    thin_pie_chart = u.make_mirror({
-        src = { x = 0, y = 676, w = 340, h = 168},
-        dst = { x = 1225, y = 654, w = 200, h = 200 },
-        shader = pie_border and "pie_chart_thin" or "pie_chart",
-        depth = 1
-    }),
-
-    tall_pie_percent = u.text_mirror({
-        src = { x = 248, y = 16163, w = 33, h = 36 },
-        dst = { x = 1445, y = 709, scale = 4 },
-        sx = 4, sy = 4, shader = "pie_text", shadow_shader = "pie_text_shadow"
-    }),
-
-    tall_pie_chart = u.make_mirror({
-        src = { x = 0, y = 15980, w = 340, h = 168 },
-        dst = { x = 1225, y = 654, w = 200, h = 200 },
-        shader = pie_border and "pie_chart_tall" or "pie_chart",
-        depth = 1
-    }),
-
-    glowdar = u.text_mirror({
-        src = { x = 1827, y = 859, w = 33, h = 24 }, -- x = 1920 - 210 + 247
-        dst = { x = 1684, y = 709, scale = 4 }, -- x = 1920 - 340 / 2 - 33 * 2 y = 674 + 169 / 2 - 24 * 2
-        sx = 4, sy = 4, shader = "pie_text", shadow_shader = "pie_text_shadow"
-    }),
-
-    f3block = u.f3_mirror(3, 11, 32, 88),
-    -- f3c = u.f3_mirror(3, 3, 0, 31),
-    -- f3e = u.f3_mirror(3, 4, 0, 49),
-    -- f3chunk = u.f3_mirror(3, 12, 36, 37),
-    -- f3o = u.f3_mirror(3, 17, 57, 11),
-}
-
-
-local images = {
-    measuring_overlay = u.make_image(c.path.overlay, {
-        dst = { x = 0, y = 365, w = 790, h = 350 },
-    }),
-    x_border = u.make_image(c.path.x_border, {
-        dst = { x = 0, y = 1080/2 - 350/2, w = 1920, h = 350 },
-    }),
-    y_border = u.make_image(c.path.y_border, {
-        dst = { x = 1920/2 - 350/2, y = 0, w = 350, h = 1080 },
-    }),
-}
-
-local show_mirrors = function(thin, tall, wide)
-    local normal = not (thin or tall or wide)
-
-    mirrors.e(thin or tall)
-
-    mirrors.eye_measure(tall)
-    images.measuring_overlay(tall)
-
-    mirrors.thin_pie_percent(thin)
-    mirrors.thin_pie_chart(thin)
-    
-    mirrors.tall_pie_percent(tall)
-    mirrors.tall_pie_chart(tall)
-
-    mirrors.glowdar(normal)
-    mirrors.f3block(normal)
-
-    images.x_border(wide)
-    images.y_border(thin or tall)
-
-    if config._.show_mirrors ~= nil then
-        config._.show_mirrors(thin, tall, wide)
+    for _, o in pairs(options.objects) do
+        for name, obj in pairs(o) do
+            if name ~= "enabled" and name ~= "action" and o.enabled then
+                if (o.enabled == true) then
+                    obj(true)
+                else
+                    obj(o.enabled[current])
+                end
+            end
+        end
     end
 end
 
-local thin_enable = function()
-    show_mirrors(true, false, false)
-    if change_dpi then u.set_dpi(c.dpi.normal) end
-    if change_sens then waywall.set_sensitivity(c.sens.normal) end
-end
-local tall_enable = function()
-    show_mirrors(false, true, false)
-    if change_dpi then u.set_dpi(c.dpi.tall) end
-    if change_sens then waywall.set_sensitivity(c.sens.tall) end
-end
-local wide_enable = function()
-    show_mirrors(false, false, true)
-    if change_dpi then u.set_dpi(c.dpi.normal) end
-    if change_sens then waywall.set_sensitivity(c.sens.normal) end
-end
-
-local res_disable = function()
-    show_mirrors(false, false, false)
-    if change_dpi then u.set_dpi(c.dpi.normal) end
-    if change_sens then waywall.set_sensitivity(c.sens.normal) end
+local function res_disable()
+    res_enable("_normal")
 end
 
 
--- ==== RESOLUTIONS ====
+local has_launched = false
+local function on_launch()
+    has_launched = true
 
-local resolutions = {
-    thin = u.make_res(340, 1080, thin_enable, res_disable),
-    tall = u.make_res(340, 16384, tall_enable, res_disable),
-    wide = u.make_res(1920, 340, wide_enable, res_disable),
-}
+    local counter = 0
+    while true do
+        -- print("running on_launch #" .. counter)
+        local did_something = false
+        for name, obj in pairs(options.action.on_launch) do
+            if name ~= "key" then
+                if obj(options) then
+                    did_something = true
+                end
+            end
+        end
+        if did_something then
+            waywall.sleep(1000)
+            counter = counter + 1
+            if counter > 10 then
+                error("on launch function looped " .. counter .. " times!")
+                break
+            end
+        else
+            break
+        end
+    end
+end
 
 
 -- ==== CONFIG ====
+local config = { actions = {} }
+if options.safe_guards.filter then
+    config.shaders = {
+        ["pie_chart"] = {
+            vertex = utils.read_file("shaders/general.vert"),
+            fragment = utils.read_file("shaders/pie_chart.frag"),
+        },
+        ["pie_chart_modern"] = {
+            vertex = utils.read_file("shaders/general.vert"),
+            fragment = utils.read_file("shaders/pie_chart_modern.frag"),
+        },
+        ["pie_chart_modern_shadow"] = {
+            vertex = utils.read_file("shaders/general.vert"),
+            fragment = utils.read_file("shaders/pie_chart_modern_shadow.frag"),
+        },
+        ["pie_text"] = {
+            vertex = utils.read_file("shaders/general.vert"),
+            fragment = utils.read_file("shaders/pie_text.frag"),
+        },
+        ["pie_text_shadow"] = {
+            vertex = utils.read_file("shaders/general.vert"),
+            fragment = utils.read_file("shaders/pie_text_shadow.frag"),
+        },
+        ["text"] = {
+            vertex = utils.read_file("shaders/general.vert"),
+            fragment = utils.read_file("shaders/text.frag"),
+        },
+        ["shadow"] = {
+            vertex = utils.read_file("shaders/general.vert"),
+            fragment = utils.read_file("shaders/text_shadow.frag"),
+        },
+    }
+end
+-- allowed under proposed filter ban
+config.shaders["pie_crop"] = {
+    vertex = utils.read_file("shaders/general.vert"),
+    fragment = utils.read_file("shaders/pie_crop.frag"),
+}
 
-config.input = c.input
-config.theme = c.theme
-config.input.remaps = c.remap.default
-if change_sens then
-    config.input.sensitivity = c.sens.normal
+
+-- apply default waywall options
+config.input = options.input
+config.input.remaps = options.remapped_kb
+config.input.sensitivity = options.sens._normal
+config.theme = options.theme
+config.window = {
+    fullscreen_width = options.window.width,
+    fullscreen_height = options.window.height,
+}
+config.experimental = options.experimental
+screen.width = options.window.width
+screen.height = options.window.height
+
+
+-- apply base actions
+utils.apply_action(config.actions, options.action.fullscreen, waywall.toggle_fullscreen)
+utils.apply_action(config.actions, options.action.on_launch, on_launch)
+utils.apply_action(config.actions, options.action.toggle_ninbot, helpers.toggle_floating)
+
+-- apply chat key action
+if type(options.action.chat_key1) == "string" then
+    config.actions[options.action.chat_key1] = chat_key(options.action.chat_key1)
+elseif type(options.action.chat_key1) == "table" then
+    config.actions[options.action.chat_key1[1]] = chat_key(options.action.chat_key1[2])
+end
+if type(options.action.chat_key2) == "string" then
+    config.actions[options.action.chat_key2] = chat_key(options.action.chat_key2)
+elseif type(options.action.chat_key2) == "table" then
+    config.actions[options.action.chat_key2[1]] = chat_key(options.action.chat_key2[2])
 end
 
-config.shaders = {
-    ["pie_chart"] = {
-        vertex = u.read_file("shaders/general.vert"),
-        fragment = u.read_file("shaders/pie_chart.frag"),
-    },
-    ["pie_chart_thin"] = {
-        vertex = u.read_file("shaders/general.vert"),
-        fragment = u.read_file("shaders/pie_chart_thin.frag"),
-    },
-    ["pie_chart_tall"] = {
-        vertex = u.read_file("shaders/general.vert"),
-        fragment = u.read_file("shaders/pie_chart_tall.frag"),
-    },
-    ["pie_chart_modern"] = {
-        vertex = u.read_file("shaders/general.vert"),
-        fragment = u.read_file("shaders/pie_chart_modern.frag"),
-    },
-    ["pie_chart_modern_shadow"] = {
-        vertex = u.read_file("shaders/general.vert"),
-        fragment = u.read_file("shaders/pie_chart_modern_shadow.frag"),
-    },
-    ["pie_chart_modern_highlight"] = {
-        vertex = u.read_file("shaders/general.vert"),
-        fragment = u.read_file("shaders/pie_chart_modern_highlight.frag"),
-    },
-    ["pie_text"] = {
-        vertex = u.read_file("shaders/general.vert"),
-        fragment = u.read_file("shaders/pie_text.frag"),
-    },
-    ["pie_text_shadow"] = {
-        vertex = u.read_file("shaders/general.vert"),
-        fragment = u.read_file("shaders/pie_text_shadow.frag"),
-    },
-    ["text"] = {
-        vertex = u.read_file("shaders/general.vert"),
-        fragment = u.read_file("shaders/text.frag"),
-    },
-    ["shadow"] = {
-        vertex = u.read_file("shaders/general.vert"),
-        fragment = u.read_file("shaders/text_shadow.frag"),
-    },
-}
 
-config.actions = {
-    [c.key.thin] = u.ingame_only(resolutions.thin),
-    [c.key.tall] = resolutions.tall,
-    [c.key.wide] = u.ingame_only(resolutions.wide),
+-- apply extra actions
+for _, extra in pairs(options.action.extra) do
+    utils.apply_action(config.actions, extra.key, extra.exec, options)
+end
 
-    [c.key.toggle_ninbot] = function()
-        -- ensure_running()
-        helpers.toggle_floating()
-        return false
-    end,
+for _, obj in pairs(options.objects) do
+    if obj.action then
+        utils.apply_action(config.actions, obj.action, function()
+            for name, el in pairs(obj) do
+                if name ~= "enabled" and name ~= "action" then
+                    el("toggle", options)
+                end
+            end
+        end)
+    end
+end
 
-    [c.key.launch_paceman] = function()
-        if not u.is_running("paceman..*") then
-            waywall.exec("java -jar " .. c.path.pacem .. " --nogui")
-        end
-    end,
 
-    [c.key.toggle_nbtracker] = function()
-        waywall.exec("pkill -f NBTrackr.*\\.py")
-    end,
+-- apply resolutions
+screen.res = {}
 
-    [c.key.fullscreen] = waywall.toggle_fullscreen,
+---@param name string
+---@param res res
+local function apply_res(name, res)
+    local size
+    if type(res.size) == "number" then
+        ---@diagnostic disable-next-line: assign-type-mismatch
+        size = screen.dst({ size = res.size })
+    else
+        ---@diagnostic disable-next-line: param-type-mismatch
+        size = screen.dst(res.size)
+    end
+    if options.safe_guards.safe_resolution then
+        size.w = math.min(math.max(size.w, 340), 16384)
+        size.h = math.min(math.max(size.h, 340), 16384)
+    end
 
-    [c.key.ensure_running] = ensure_running,
+    screen.res["res:" .. name] = size
 
-    -- disable remap when typing
-    ["Return"] = chat_key("Enter"),
-    ["Slash"] = chat_key("Slash"),
-}
+    local res_fun = utils.make_res(size.w, size.h, function() res_enable(name) end, res_disable, res.animate)
+    utils.apply_action(config.actions, res, res_fun)
 
-u.mpk(c.key.mpk, config)
+    if res.auto_disable and options.safe_guards.state_output then
+        waywall.listen("state", function()
+            local state = waywall.state()
+            if state.screen ~= "inworld" or state.inworld ~= "unpaused" then
+                res_fun(false)
+            end
+        end)
+    end
+end
+
+for name, res in pairs(options.res) do
+    if not res.defer then
+        apply_res(name, res)
+    end
+end
+for name, res in pairs(options.res) do
+    if res.defer then
+        apply_res(name, res)
+    end
+end
+
+
+-- apply mpk
+if options.safe_guards.macro then
+    utils.mpk(options.mpk, config)
+end
 
 waywall.listen("load", function()
+    waywall.set_resolution(0, 0)
     res_disable()
     waywall.sleep(5000)
-    while ensure_running() do
-        waywall.sleep(1000)
-    end
-    if u.has_state == nil then
-        u.has_state = false
-        waywall.state() -- errors if no state present
-        u.has_state = true
-    end
+    on_launch()
+    waywall.sleep(5000) -- sometimes ninjabrain bot closes and i don't know why
+    on_launch()
 end)
 
+
 waywall.listen("state", function()
-    u.has_state = true
+    utils.has_state = options.safe_guards.state_output
+    if not options.safe_guards.state_output then return end
+
     local state = waywall.state()
+    if not has_launched then
+        on_launch()
+    end
     if state.screen == "inworld" and state.inworld == "unpaused" then
-        waywall.set_remaps(c.remap.default)
+        waywall.set_remaps(options.remapped_kb)
         chat_text(false)
         active_remap = "default"
-        if u.starting_mpk then
-            u.starting_mpk = false
-            waywall.press_key(c.key.mpk.load)
+        if utils.starting_mpk then
+            utils.starting_mpk = false
+            waywall.press_key(options.mpk.load)
         end
     end
     if state.screen ~= "inworld" then
-        waywall.set_remaps({})
+        waywall.set_remaps(options.normal_kb)
         chat_text(true)
         active_remap = "chat"
     end
 end)
-
-require("takeabreak/init")(config, c.key.takeabreak)
-
-config._ = {
-    mirrors = mirrors,
-    cfg = c,
-}
 
 return config

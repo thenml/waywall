@@ -16,10 +16,10 @@ uniform sampler2D u_texture;
 
 const float threshold = 0.01;
 
-const vec3 entities = vec3(0.882, 0.271, 0.761);
-const vec3 blockentities = vec3(0.914, 0.427, 0.302);
-const vec3 unspecified = vec3(0.271, 0.796, 0.396);
-const vec3 mobspawner = vec3(0.302, 0.882, 0.792);
+const vec3 entities         = vec3(0.882, 0.271, 0.761);
+const vec3 blockentities    = vec3(0.914, 0.427, 0.302);
+const vec3 unspecified      = vec3(0.271, 0.796, 0.396);
+const vec3 mobspawner       = vec3(0.302, 0.882, 0.792);
 
 void main() {
     vec4 color = texture2D(u_texture, f_src_pos);

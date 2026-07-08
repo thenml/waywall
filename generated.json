@@ -1,0 +1,17 @@
+{
+  "screen_width": 1920,
+  "screen_height": 1080,
+  "thin_w": 340,
+  "thin_h": 1080,
+  "wide_w": 1920,
+  "wide_h": 340,
+  "border": 5,
+  "overlay_w": 790,
+  "overlay_h": 350,
+  "color": "#c292e2",
+  "pie_d": 200,
+  "pie_bg": "#000000",
+  "tools_path": "os.getenv(\"HOME\") .. \".config/waywall/tools/\"",
+  "images": true,
+  "autogen": true
+}

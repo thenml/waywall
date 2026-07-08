@@ -1,49 +1,57 @@
-# nml's waywall config
+# nml's waywall config V3
 
-based on gore's barebones and soup's configs with random stuff pulled from the mcsr linux discord, don't remember everything SORREY
+fully rewritten to be as easily configurable as possible! cooked a little too hard so this may be a little bloated lmao
 
-this will not work for you unless you have my exact setup (1080p, logitech mouse, hyprland), you can just take stuff from `utils.lua` and `takeabreak/` instead
+based on gore's barebones and soup's configs
 
 ### features
 
-- ★ auto logitech dpi switch
+- ★ WORKS FOR ALL RESOLUTIONS!!! (check [setup](#setup))
+- ★ hyper configurable options file with luals types
+- ★ patching options with profiles
+- ★ quick setup script
 - ★ disable remap in chat
-- ★ transparent nbtracker with hyprland:darkwindow
-- ★ link saves to /tmp with maps
-- ★ auto disable state functionality for 26.1+
-- ★ take a break aga
-- tall/thin/wide
+- tall/thin/wide and more
 - f3 text, pie, glowdar mirrors
 - mirror borders
 - mpk quickbind
 
-## hyprland config
+## setup
 
-```properties
-windowrule = border_size 0, rounding 0, no_blur on, workspace 1, match:class waywall
-windowrule = float on, border_size 0, rounding 0, no_blur on, pin on, no_focus on, workspace 1, darkwindow:shade transparentNB, match:tag nboverlay
-layerrule = xray on, order 10, ignore_alpha 0.9, match:tag nboverlay
+0. if you already have an existing config, run
+   ```bash
+   mv ~/.config/waywall ~/.config/waywall.bkp
+   ```
+   to backup it
+1. clone the config
+   ```bash
+   git clone https://github.com/thenml/waywall-config.git ~/.config/waywall
+   ```
+2. run `python3 setup.py`
 
-input {
-    sensitivity = -0.75
-}
-plugin:darkwindow {
-    shader[transparentNB] {
-        path = /home/nml/.config/waywall/shaders/NBTracker-transparency.glsl
-        args = bkg = [0 0 0] targetOpacity = 0 similarity = 0.01
-        introduces_transparency = true
-    }
-}
-```
+done! (now go fully read the options)
+
+## profile setup
+
+1. add or choose a profile in `profile/`
+2. put `waywall wrap --profile profile/{name} --` as your wrapper command (no .lua at the end!)
+   - example: `waywall wrap --profile profile/draftout --`
+
+done!
+
+## hermes state output setup
+
+enable experimental scipt that watches hermes `state.json` and converts it to a `wpstateoutput.txt` that waywall can read. also creates a dummy `fakestateoutput.jar` mod to trick waywall into reading the state
+
+put `bash /home/$USER/.config/waywall/scripts/hermes-compat.sh` **before** the waywall wrapper
+
+example: `bash /home/$USER/.config/waywall/scripts/hermes-compat.sh waywall wrap --profile profile/draftout --`
+
+done!
 
 ## screenshots
 
-![e-ray](./screenshots/e-ray.png)
-![glowdar](./screenshots/glowdar.png)
-![wide](./screenshots/wide.png)
-![boat-eye](./screenshots/boat-eye.png)
-![blind-to-sh](./screenshots/blind-to-sh.png)
 ![preemptive](./screenshots/preemptive.png)
-![take-a-break-aga](./screenshots/take-a-break-aga.png)
-
-screenshots taken on 17 april, there may be small differences between the current config
+![glowdar](./screenshots/glowdar.png)
+![eye-measure-19x10](./screenshots/eye-measure-19x10.png)
+![preemptive-modern](./screenshots/preemptive-modern.png)

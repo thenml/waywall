@@ -1,15 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
+# # /tmp/saves helper script
+# 1. tmp-saves.sh -i /path/to/saves
+# 	sets up a symlink to /tmp/mcsr from specified directory.
+#   run this once per instance
+# 2. tmp-saves.sh -p /path/to/maps
+#   links maps to /tmp/mcsr.
+#   run this before launching an instance
+# 3. tmp-saves.sh -w
+#   deletes older worlds, keeps maps and 5 recent worlds
+# 	run this while playing
+
+
 usage() {
-    echo "Usage: $0 [--init/-i <saves>] [--prepare/-p] [--watch/-w]"
+    echo "Usage: $0 [--init/-i <saves>] [--prepare/-p <maps>] [--watch/-w]"
     echo "  --init/-i <saves>   Initialize saves directory"
     echo "  --prepare/-p        Prepare saves directory"
     echo "  --watch/-w          Watch saves directory for cleanup"
     exit 1
 }
-
-maps="$HOME/Documents/Minecraft/mcsr/maps"
 
 if [[ "${1:-}" == "--init" || "${1:-}" == "-i" ]]; then
     saves="$2"
@@ -32,19 +43,21 @@ if [[ "${1:-}" == "--init" || "${1:-}" == "-i" ]]; then
 fi
 
 if [[ "${1:-}" == "--prepare" || "${1:-}" == "-p" ]]; then
-	echo "Copying saves to /tmp/mcsr"
+    maps="$2"
+	if [ -z "$maps" ]; then
+		usage
+		exit 1
+	fi
+	echo "Copying maps to /tmp/mcsr"
 
 	# remove if exists
-	if [[ -d /tmp/mcsr ]]; then
-		echo "/tmp/mcsr already exists"
-	else
-		rm -rf /tmp/mcsr
-		mkdir /tmp/mcsr
-		ls $maps | while read -r i; do
-			ln -s "$maps/$i" "/tmp/mcsr/a$i"
-		done
-		chown $USER:$USER -R /tmp/mcsr
-	fi
+	rm -rf /tmp/mcsr
+
+	mkdir /tmp/mcsr
+	ls $maps | while read -r i; do
+		ln -s "$maps/$i" "/tmp/mcsr/a$i"
+	done
+	chown $USER:$USER -R /tmp/mcsr
 	exit 0
 fi
 

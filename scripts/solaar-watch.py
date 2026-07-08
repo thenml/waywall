@@ -14,6 +14,18 @@
 ## with this program; if not, write to the Free Software Foundation, Inc.,
 ## 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+# # fast change dpi using solaar
+# regular calls to solaar take a couple seconds due to having to reinitiallize variables
+# this script instead loads everything once, then watches for a file /tmp/solaar-watch-set to change the dpi (or any other setting)
+# 
+# usage:
+# solaar-watch.py <mouse name> <setting>
+# echo $VALUE > /tmp/solaar-watch-set
+# 
+# example:
+# solaar-watch.py G304 DPI
+# echo 600 > /tmp/solaar-watch-set
+
 import yaml
 import time
 import os

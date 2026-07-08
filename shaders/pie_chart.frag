@@ -1,7 +1,7 @@
 precision highp float;
 
 #define RGB8(r,g,b)   (vec4((r)/255.0, (g)/255.0, (b)/255.0, 1.0))
-#define RGBA8(r,g,b,a) (vec4((r)/255.0, (g)/255.0, (b)/255.0, (a)/255.0))
+#define RGBA8(r,g,b,a) (vec4((r)/255.0, (g)/255.0, (b)/255.0, (a)))
 
 const vec4 entity_color = RGB8(228.0, 70.0, 196.0);
 const vec4 unspecified_color = RGB8(70.0, 206.0, 102.0);
@@ -17,7 +17,6 @@ uniform sampler2D u_texture;
 const float threshold = 0.01;
 
 const vec3 entities         = vec3(0.894, 0.275, 0.769);
-
 const vec3 unspecified      = vec3(0.275, 0.808, 0.400);
 const vec3 destroyProgress  = vec3(0.800, 0.424, 0.275);
 const vec3 prepare          = vec3(0.275, 0.298, 0.275);

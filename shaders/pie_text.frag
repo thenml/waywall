@@ -1,7 +1,7 @@
 precision highp float;
 
 #define RGB8(r,g,b)   (vec4((r)/255.0, (g)/255.0, (b)/255.0, 1.0))
-#define RGBA8(r,g,b,a) (vec4((r)/255.0, (g)/255.0, (b)/255.0, (a)/255.0))
+#define RGBA8(r,g,b,a) (vec4((r)/255.0, (g)/255.0, (b)/255.0, (a)))
 
 const vec4 entity_color = RGB8(228.0, 70.0, 196.0);
 const vec4 unspecified_color = RGB8(70.0, 206.0, 102.0);
@@ -16,10 +16,10 @@ uniform sampler2D u_texture;
 
 const float threshold = 0.01;
 
-const vec3 entities = vec3(0.882, 0.271, 0.761);
-const vec3 blockentities = vec3(0.914, 0.427, 0.302);
-const vec3 unspecified = vec3(0.271, 0.796, 0.396);
-const vec3 mobspawner = vec3(0.302, 0.882, 0.792);
+const vec3 entities         = vec3(0.882, 0.271, 0.761);
+const vec3 blockentities    = vec3(0.914, 0.427, 0.302);
+const vec3 unspecified      = vec3(0.271, 0.796, 0.396);
+const vec3 mobspawner       = vec3(0.302, 0.882, 0.792);
 
 void main() {
     vec4 color = texture2D(u_texture, f_src_pos);

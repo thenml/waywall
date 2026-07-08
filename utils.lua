@@ -1,13 +1,37 @@
 local waywall = require("waywall")
 local helpers = require("waywall.helpers")
+local screen  = require("screen")
 
-local utils = {}
+local utils   = {}
 
--- ==== gore's generic config ====
+
+-- converts a sequential array-like list into a dictionary-style set for O(1) lookups by mapping the list values to true
+---@generic T
+---@param list T[]
+---@return table<T, boolean>
+function utils.set(list)
+    local set = {}
+    for _, l in ipairs(list) do set[l] = true end
+    return set
+end
+
+-- makes a basic copy of a table (does not copy tables inside tables)
+---@generic T : table
+---@param original T
+---@return T
+function utils.shallow_copy(original)
+    local copy = {}
+    for key, value in pairs(original) do
+        copy[key] = value
+    end
+    return copy
+end
 
 -- read a file from the config directory
 -- - gore's generic config
-utils.read_file = function(name)
+---@param name string filename
+---@return string File contents
+function utils.read_file(name)
     local home = os.getenv("HOME")
 
     local file = io.open(home .. "/.config/waywall/" .. name, "r")
@@ -17,16 +41,30 @@ utils.read_file = function(name)
     return data
 end
 
--- wrapper for waywall.set_resolution to create a toggleable resolution
+-- wrapper for waywall.set_resolution to create a toggleable resolution, with extra features
 -- - gore's generic config
-utils.make_res = function(width, height, enable, disable)
-    return function()
+---@param width number width
+---@param height number height
+---@param enable fun() function to run when enabling
+---@param disable fun() function to run when disabling
+---@param animate? boolean animate for https://github.com/char3210/resize_animation/blob/main/resize_animation_waywall.py
+---@return fun(force: boolean): boolean
+function utils.make_res(width, height, enable, disable, animate)
+    return function(force)
         local active_width, active_height = waywall.active_res()
 
-        if active_width == width and active_height == height then
+        if active_width == width and active_height == height and force ~= true then
+            if animate then
+                os.execute('echo "0x0" > ~/.resetti_state')
+                waywall.sleep(17)
+            end
             waywall.set_resolution(0, 0)
             disable()
-        else
+        elseif force ~= false then
+            if animate then
+                os.execute(string.format('echo "%dx%d" > ~/.resetti_state', width, height))
+                waywall.sleep(17)
+            end
             waywall.set_resolution(width, height)
             enable()
         end
@@ -34,35 +72,126 @@ utils.make_res = function(width, height, enable, disable)
     end
 end
 
--- wrapper for waywall.mirror to create a toggleable mirror
--- - options = mirror options & { dst.scale } for auto scale
--- - gore's generic config
-utils.make_mirror = function(options)
-    local this = nil
+---@class DstRectOptions: RectOptions
+---@field scale number copies and multiplies src.w and src.h, requires them to be static pixel values
 
-	if options.dst.scale then
-		options.dst.w = options.src.w * options.dst.scale
-		options.dst.h = options.src.h * options.dst.scale
-	end
+---@class MirrorOptions
+---@field src RectOptions
+---@field dst RectOptions|DstRectOptions|"src" dst = "src" copies the values of src
+---@field shader? string "", "default", "none" set this to nil
+---@field depth? integer
+---@field multi_res? boolean set to true if src can change based on resolution
+---@field color_key? {input: string, output: string} | {input: string, output: string}[] can be an array to create multiple mirrors
+
+-- wrapper for waywall.mirror to create a toggleable mirror
+---@param options MirrorOptions
+---@return fun(enable: boolean|"toggle")
+function utils.make_mirror(options)
+    local mirrors = {}
+    ---@type {[string]: {src: table, dst: table}}
+    local cache = {}
+
+    if options.dst == "src" then
+        options.dst = options.src
+    end
+
+    if options.dst.scale then
+        options.dst.w = options.src.w * options.dst.scale
+        options.dst.h = options.src.h * options.dst.scale
+    end
+
+    if options.shader == "" or options.shader == "default" or options.shader == "none" then
+        options.shader = nil
+    end
+
+    local keys
+    if options.color_key then
+        if options.color_key.input then
+            keys = { options.color_key }
+        else
+            keys = options.color_key
+        end
+    end
+
+    local function close()
+        for _, mirror in ipairs(mirrors) do
+            mirror:close()
+        end
+        mirrors = {}
+    end
 
     return function(enable)
-        if enable and not this then
-            this = waywall.mirror(options)
-        elseif this and not enable then
-            this:close()
-            this = nil
+        if not enable or (enable == "toggle" and #mirrors ~= 0) then
+            close()
+            return
+        end
+
+        if #mirrors ~= 0 then
+            if not options.multi_res then
+                return
+            end
+            close()
+        end
+
+        local src, dst
+        local res = "default"
+
+        if options.multi_res then
+            local w, h = waywall.active_res()
+            res = w .. ":" .. h
+        end
+
+        local cached = cache[res]
+
+        if not cached then
+            cached = {
+                src = screen.src(options.src),
+                ---@diagnostic disable-next-line: param-type-mismatch
+                dst = screen.dst(options.dst),
+            }
+            cache[res] = cached
+        end
+        src, dst = cached.src, cached.dst
+
+        if keys then
+            for _, key in ipairs(keys) do
+                mirrors[#mirrors + 1] = waywall.mirror({
+                    src = src,
+                    dst = dst,
+                    shader = options.shader,
+                    depth = options.depth,
+                    color_key = key,
+                })
+            end
+        else
+            mirrors[1] = waywall.mirror({
+                src = src,
+                dst = dst,
+                shader = options.shader,
+                depth = options.depth,
+            })
         end
     end
 end
 
 -- wrapper for waywall.image to create a toggleable image
--- - gore's generic config
-utils.make_image = function(path, dst)
+---@param options {path: string, dst: RectOptions, depth?: integer, shader?: string}
+---@return fun(enable: boolean|"toggle")
+function utils.make_image(options)
     local this = nil
+    local applied = false
+    local path = options.path
+
+    ---@cast options {path: string, dst: {}}
 
     return function(enable)
+        if enable == "toggle" then enable = this == nil end
         if enable and not this then
-            this = waywall.image(path, dst)
+            if not applied then
+                options.dst = screen.dst(options.dst)
+                applied = true
+            end
+            this = waywall.image(path, options)
         elseif this and not enable then
             this:close()
             this = nil
@@ -71,13 +200,24 @@ utils.make_image = function(path, dst)
 end
 
 -- wrapper for waywall.text to create toggleable text
--- - gore's generic config
-utils.make_text = function(text, dst)
+---@param options {text: string, dst: RectOptions, depth?: integer, shader?: string, size?: number, color?: string}
+---@return fun(enable: boolean|"toggle")
+function utils.make_text(options)
     local this = nil
+    local applied = false
+    local text = options.text
 
+    ---@cast options {text: string, dst: {}, x: number,  y: number}
     return function(enable)
+        if enable == "toggle" then enable = this == nil end
         if enable and not this then
-            this = waywall.text(text, dst)
+            if not applied then
+                local dst = screen.text(options)
+                options.x = dst.x
+                options.y = dst.y
+                applied = true
+            end
+            this = waywall.text(text, options)
         elseif this and not enable then
             this:close()
             this = nil
@@ -89,43 +229,54 @@ end
 utils.starting_mpk = false
 -- configure mpk keybinds
 -- - https://discord.com/channels/1095808506239651942/1374968058506117130/1451035479288840304
-utils.mpk = function(cfg, config)
-    config.actions[cfg.launch] = function()
-        for _, key in ipairs({ "Esc", "Esc", "Esc", "Tab", "Space", "Tab", "Tab", "Tab", "Space", "Tab", "Space", "Space", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Space" }) do
+---@param cfg mpk
+function utils.mpk(cfg, config)
+    config.actions[cfg.launch_key] = function()
+        for _, key in ipairs(cfg.launch_macro) do
             waywall.press_key(key)
         end
         utils.starting_mpk = true
     end
 
-    config.actions[cfg.quit] = function()
-        for _, key in ipairs({ "Esc", "Esc", "Tab", "Space", "Esc", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Space" }) do
+    config.actions[cfg.quit_key] = function()
+        for _, key in ipairs(cfg.quit_macro) do
             waywall.press_key(key)
         end
     end
 end
 
--- ==== nml's utils ====
-
 -- use pgrep to check if a process is running
-utils.is_running = function(regex)
+---@param regex string
+---@return boolean
+function utils.is_running(regex)
     local handle = io.popen("pgrep -f '" .. regex .. "'")
     local result = handle:read("*l")
     handle:close()
     return result ~= nil
 end
 
--- set dpi of a logitech mouse via `scripts/solaar-watch.py`
-utils.set_dpi = function(dpi)
-    local handle = io.popen("echo " .. dpi .. " > /tmp/solaar-watch-set")
-    local result = handle:read("*l")
-    handle:close()
-    return result ~= nil
+-- true if the game has state output
+utils.has_state = false
+
+-- wrapper for helpers.ingame_only to run when state output is missing
+---@return boolean
+function utils.is_ingame()
+    if utils.has_state then
+        local state = waywall.state()
+
+        if state.screen == "inworld" and state.inworld == "unpaused" then
+            return true
+        else
+            return false
+        end
+    end
+    return true
 end
 
--- true if the game has state output, false if not, nil if unchecked
-utils.has_state = nil
 -- wrapper for helpers.ingame_only to run when state output is missing
-utils.ingame_only = function(func)
+---@param func fun()
+---@return fun()
+function utils.ingame_only(func)
     return function()
         if utils.has_state then
             return helpers.ingame_only(func)()
@@ -134,23 +285,39 @@ utils.ingame_only = function(func)
     end
 end
 
+---@class ShadowSettings
+---@field x? integer x offset (default 1)
+---@field y? integer y offset (default 1)
+---@field shader? string shader (default shadow)
+---@field color_key? {input: string, output: string} color_key (default none)
+
 -- create a function that creates a toggleable text mirror with an optional shadow
--- - options = mirror options & { sx, sy } for shadow offset & { shadow_shader } for optional shadow shader
-utils.text_mirror = function(options)
+-- - options = mirror options & shadow shader (set shadow to {} to disable)
+---@param options {src: RectOptions, dst: RectOptions|"src", multi_res?: boolean, shadow?: ShadowSettings, shader?: string, depth?: integer, color_key?: {input: string, output: string}}
+---@return fun(enable: boolean)
+function utils.text_mirror(options)
     options.shader = options.shader or "text"
+
+    ---@cast options any
+
     local text = utils.make_mirror(options)
-    local shadow = nil
-    if options.sx or options.sy then
-        local options2 = {
-            src = options.src, shader = options.shadow_shader or "shadow",
-            dst = { x = options.dst.x + options.sx,  y = options.dst.y + options.sy, w = options.dst.w, h = options.dst.h }
-        }
-		if options.dst.scale then
-			options2.dst.w = options.src.w * options.dst.scale
-			options2.dst.h = options.src.h * options.dst.scale
-		end
-        shadow = utils.make_mirror(options2)
+    local shadow
+
+    if options.shadow ~= {} then
+        if options.shadow == nil then options.shadow = {} end
+        options = utils.shallow_copy(options)
+        options.dst = utils.shallow_copy(options.dst)
+        options.dst.h = options.dst.scale and options.src.h * options.dst.scale or options.dst.h
+        options.dst.x = (options.dst.x or 0) + (options.shadow.x or 1) * (options.dst.scale or 1) or options.dst.w
+        options.dst.y = (options.dst.y or 0) + (options.shadow.y or 1) * (options.dst.scale or 1) or options.dst.h
+        options.dst.w = options.dst.scale and options.src.w * options.dst.scale or options.dst.w
+        options.dst.h = options.dst.scale and options.src.h * options.dst.scale or options.dst.h
+        options.shader = options.shadow.shader or "shadow"
+        options.color_key = options.shadow.color_key
+
+        shadow = utils.make_mirror(options)
     end
+
     return function(enable)
         text(enable)
         if shadow then
@@ -159,24 +326,83 @@ utils.text_mirror = function(options)
     end
 end
 
+---@class f3RectOptions: RectOptions
+---@field gui_scale number
+---@field line number
+
 -- create a function that creates a toggleable mirror for the f3 screen
--- - gui_scale = src gui scale
--- - line = line number from 0
--- - x = left offset
--- - w = width
--- - dst = mirror dst
-utils.f3_mirror = function(gui_scale, line, x, w, dst)
-    local src = { x = (1 + x) * gui_scale, y = (1 + line * 9) * gui_scale, w = w * gui_scale, h = 9 * gui_scale }
-	if not dst then
-		dst = {}
-	end
-    if not dst.x and not dst.y then
-        dst.x = src.x
-        dst.y = src.y
-        dst.w = src.w
-        dst.h = src.h
+---@param options {src: f3RectOptions, dst: RectOptions|"src", multi_res?: boolean, shadow?: ShadowSettings, shader?: string, depth?: integer, color_key?: {input: string, output: string}}
+---@param maker? function function to create the mirror with (defaults to utils.text_mirror)
+---@return fun(enable: boolean)
+function utils.f3_mirror(options, maker)
+    if options.shadow ~= {} then
+        if options.shadow == nil then
+            options.shadow = {
+                x = options.src.gui_scale,
+                y = options.src.gui_scale,
+            }
+        end
     end
-    return utils.text_mirror({ src = src, dst = dst, sx = gui_scale * (dst.scale or 1), sy = gui_scale * (dst.scale or 1), shader = dst.shader })
+    if maker == nil then
+        maker = utils.text_mirror
+    end
+    local src = {
+        x = options.src.x * options.src.gui_scale,
+        y = (1 + options.src.line * 9) * options.src.gui_scale,
+        w = options.src.w * options.src.gui_scale,
+        h = 9 * options.src.gui_scale,
+        anchor = "topleft",
+    }
+    options.src = src
+    if options.src.x < 0 then
+        options.src.anchor = "topright"
+    end
+    if not options.dst then
+        options.dst = {}
+    end
+    ---@diagnostic disable-next-line: param-type-mismatch
+    return maker(options)
+end
+
+-- create a function that creates a toggleable mirror for the f3 screen without shaders and shadows
+---@param options {src: f3RectOptions, dst: RectOptions|"src", multi_res?: boolean, shader?: string, depth?: integer, color_key?: {input: string, output: string}}
+---@return fun(enable: boolean)
+function utils.f3_mirror_basic(options)
+    return utils.f3_mirror(options, utils.make_mirror)
+end
+
+-- get the key from the action
+---@param action Action|string|nil|string[]
+---@param default? string
+function utils.get_key(action, default)
+    if not action then return default end
+    if action.key == nil then
+        if action[1] ~= nil then return action[1] end
+        return action
+    end
+    return action.key
+end
+
+-- apply an action
+---@param cfga table config.actions
+---@param action? Action|string action configuration
+---@param exec fun(...): boolean? function to run
+---@param ...? any params for the function
+function utils.apply_action(cfga, action, exec, ...)
+    if not action then return end
+    local args = { ... }
+    local n = select("#", ...)
+    cfga[utils.get_key(action)] = function()
+        if action.f3_safe and waywall.get_key("F3") then return false end
+        if action.ingame_only and utils.has_state then
+            local state = waywall.state()
+            if state.screen ~= "inworld" or state.inworld ~= "unpaused" then return false end
+        end
+
+        local out = exec(unpack(args, 1, n))
+        if action.consume_input == nil then return out end
+        return action.consume_input
+    end
 end
 
 return utils

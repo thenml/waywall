@@ -29,17 +29,15 @@ varying vec2 f_src_pos;
 
 uniform sampler2D u_texture;
 
-const float threshold = 0.01;
-
 void main() {
     vec4 color = texture2D(u_texture, f_src_pos);
 
     if (
+        (is(c_root) && f_src_pos.y < 0.9) ||
         is(c_entities) ||
         is(c_blockentities) ||
         is(c_unspecified) ||
         is(c_debug) ||
-        is(c_root) ||
         is(c_frame) ||
         is(c_extract) ||
         is(c_level) ||
