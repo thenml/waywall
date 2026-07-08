@@ -15,7 +15,7 @@ local utils = require("utils")
 
 
 local config_path = os.getenv("HOME") .. "/.config/waywall/"
-local tools_path = os.getenv("HOME") .. "/.config/waywall/tools/"
+local tools_path = os.getenv("HOME") .. "/Documents/Minecraft/mcsr/"
 
 
 -- paths to files. you can modify and remove home_path and config_path, they are provided only for convenience
@@ -139,14 +139,31 @@ local options = {
 		_use_maccel = false,
 
 		-- resolutions
-		_normal = 1.0,
-		tall = 0.2,
+		_normal = 4.2,
+		tall = 0.4,
 	},
 
 
 	-- https://tesselslate.github.io/waywall/01_options_input.html#input-remapping
 	remapped_kb = {
-		-- add any remaps you want
+		-- f3 on mouse
+		["MB5"] = "F3",
+
+		-- z <-> left shift (easier pie)
+		["Z"] = "LeftShift",
+		["LeftShift"] = "Z",
+
+		-- d <-> x; f <-> r; t <-> a (easier f3 kb)
+		["D"] = "X",
+		["X"] = "D",
+		["F"] = "R",
+		["R"] = "F",
+		["T"] = "A",
+		["A"] = "T",
+
+		-- q <-> o (search crafting)
+		["Q"] = "O",
+		["O"] = "Q",
 	},
 	normal_kb = {
 		-- add any remaps you want to keep when disabling normal remaps (not necessary)
@@ -167,7 +184,7 @@ local options = {
 
 
 		thin = {
-			key = "*-Alt_L",
+			key = "*-B",
 			ingame_only = true,
 			auto_disable = true,
 			f3_safe = false,
@@ -176,7 +193,7 @@ local options = {
 		},
 
 		wide = {
-			key = "*-B",
+			key = "*-Hyper_L",
 			ingame_only = true,
 			auto_disable = true,
 			f3_safe = true,
@@ -185,7 +202,7 @@ local options = {
 		},
 
 		tall = {
-			key = "*-F4",
+			key = "*-2",
 			ingame_only = false,
 			auto_disable = false,
 			f3_safe = false,
@@ -245,18 +262,6 @@ local options = {
 				end
 			end,
 
-			-- ! Remove Me !
-			initialization = function()
-				utils.make_text {
-					text = "Press Shift + I to show keybinds.\n\n" ..
-						"Disable this message by removing\n" ..
-						"\'on_launch.initialization\'\n" ..
-						"in ~/.config/waywall/options.lua\n",
-					dst = { anchor = "top", y = 24 },
-					size = 1, color = "#ffffff"
-				} (true)
-			end
-
 			-- extend here
 
 			-- Note: objects set in here can disappear when collected by the Lua virtual machine,
@@ -269,19 +274,6 @@ local options = {
 			---@class (exact) extra_action: Action
 			---@field exec fun(options: options): boolean?
 			---@see Action
-
-
-			launch_paceman = {
-				-- key to activate the action
-				key = "Shift-P",
-
-				-- function that gets run, with the options as the param
-				exec = function(options)
-					if not utils.is_running("paceman..*") then
-						waywall.exec("java -jar " .. options.path.paceman .. " --nogui")
-					end
-				end
-			},
 
 
 			-- show ninjabrain bot for 5 seconds when copying coords
@@ -450,24 +442,6 @@ local options = {
 			}
 		},
 
-		-- alternative pie chart using per-color mirrors like gore's generic config
-		-- pie_chart = {
-		-- 	enabled = utils.set{"thin", "tall"},
-		-- 	utils.make_mirror{
-		-- 		src = { x = 0, y = -235, w = 340, h = 170, anchor = "bottomright"},
-		-- 		dst = { pos_anchor = { 0.75, 0.5 }, item_anchor = "top", w = pie_d, h = pie_d, },
-		-- 		depth = 1, multi_res = true,
-		-- 		color_key = {
-		-- 			-- yeah, we're supporting multiple color keys here
-		-- 			{ input = "#EC6E4E", output = "#EC6E4E" },
-		-- 			{ input = "#46CE66", output = "#46CE66" },
-		-- 			{ input = "#CC6C46", output = "#CC6C46" },
-		-- 			{ input = "#464C46", output = "#464C46" },
-		-- 			{ input = "#E446C4", output = "#E446C4" }
-		-- 		}
-		-- 	},
-		-- },
-
 		pie_percent = {
 			enabled = utils.set { "thin", "tall" },
 			utils.text_mirror {
@@ -475,13 +449,6 @@ local options = {
 				dst = { pos_anchor = { 0.75, 0.5 }, item_anchor = "left", x = pie_d / 2, y = pie_d / 2, scale = 4 },
 				shader = "pie_text", shadow = { shader = "pie_text_shadow" }, multi_res = true
 			}
-
-			-- alternative without [FILTER]
-			-- utils.make_mirror {
-			-- 	src = { x = -60, y = -196, w = 32, h = 24, anchor = "bottomright" },
-			-- 	dst = { pos_anchor = { 0.75, 0.5 }, item_anchor = "left", x = pie_d/2, y = pie_d/2, scale = 4 },
-			-- 	multi_res = true
-			-- }
 		},
 
 		glowdar = {
@@ -491,27 +458,11 @@ local options = {
 				dst = { x = -170, y = -305, scale = 4, pos_anchor = "bottomright" },
 				shader = "pie_text", shadow = { shader = "pie_text_shadow" }
 			},
-
-			-- alternative without [FILTER]
-			-- action = "Ctrl-F3", -- remove `enabled` to make it toggle only with this action
-			-- utils.make_mirror {
-			-- 	src = { x = -60, y = -196, w = 32, h = 24, anchor = "bottomright" },
-			-- 	dst = { scale = 4, anchor = "bottomright" },
-			-- 	multi_res = true
-			-- },
 		},
 
 		-- technically these are just extra_actions with resolution support
 
 		-- extend here
-
-		-- f3block = {
-		-- 	enabled = utils.set { "_normal" },
-		-- 	utils.f3_mirror {
-		-- 		src = { gui_scale = 3, line = 11, x = 33, w = 88 },
-		-- 		dst = "src", -- copy position from src
-		-- 	},
-		-- }
 	},
 
 
@@ -528,7 +479,7 @@ local options = {
 		quit_macro = { "Esc", "Esc", "Tab", "Space", "Esc", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Space" },
 
 		-- saved hotbar row the mpk is stored in. (hold your hotbar restore key to automatically load it)
-		load = "1"
+		load = "W"
 	},
 }
 

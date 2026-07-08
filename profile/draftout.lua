@@ -10,7 +10,12 @@ options.action.chat_key2 = nil
 
 
 options.remapped_kb = {
+	-- f3 on mouse
+	["MB5"] = "F3",
 
+	-- z <-> left shift (easier pie)
+	["Z"] = "LeftShift",
+	["LeftShift"] = "Z",
 }
 
 options.objects.e = {
