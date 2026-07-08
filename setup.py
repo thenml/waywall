@@ -162,8 +162,8 @@ def main():
 		cfg["screen_width"] = prompt("Set your screen width\n[1920]", eval) or 1920
 		cfg["screen_height"] = prompt("Set your screen height\n[1080]", eval) or 1080
 
-		thin_w = int(cfg["screen_height"] * (340/1080))
-		wide_h = int(cfg["screen_width"] / (1920/340))
+		thin_w = max(340, int(cfg["screen_height"] * (340/1080)))
+		wide_h = max(340, int(cfg["screen_width"] / (1920/340)))
 		cfg["thin_w"] = prompt(f"Thin resolution width\n[recommended: {thin_w}]", eval) or thin_w
 		cfg["thin_h"] = prompt(f"Thin resolution height (% relative to screen or absolute)\n[100%]") or "100%"
 		cfg["wide_w"] = prompt(f"Wide resolution width (% relative to screen or absolute)\n[100%]") or "100%"
