@@ -195,7 +195,7 @@ def main():
 		
 		tools_path = input("Put a path to save your tools in (Ninjabrain Bot, Paceman, etc)\n[~/.config/waywall/tools/] > ~/").strip() or ".config/waywall/tools/"
 		if not tools_path.endswith("/"): tools_path = tools_path + "/"
-		cfg["tools_path"] = f'os.getenv("HOME") .. "{tools_path}"'
+		cfg["tools_path"] = f'os.getenv("HOME") .. "/{tools_path}"'
 
 		cfg["images"] = (prompt("Generate images for these sizes?\n[Y]/n") or "y") == "y"
 		cfg["autogen"] = (prompt("Modify options.lua with these changes?\n[Y]/n") or "y") == "y"

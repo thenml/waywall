@@ -11,7 +11,7 @@
   "color": "#c292e2",
   "pie_d": 200,
   "pie_bg": "#000000",
-  "tools_path": "os.getenv(\"HOME\") .. \".config/waywall/tools/\"",
+  "tools_path": "os.getenv(\"HOME\") .. \"/.config/waywall/tools/\"",
   "images": true,
   "autogen": true
 }
