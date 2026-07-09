@@ -3,7 +3,7 @@ local options = require("options")
 local utils = require("utils")
 
 
--- remove this if you have state output
+-- remove this if you have state output (from hermes-compat.sh)
 options.safe_guards.state_output = false
 options.action.chat_key1 = nil
 options.action.chat_key2 = nil
@@ -16,7 +16,8 @@ options.remapped_kb = {
 options.objects.e = {
 	enabled = utils.set { "thin", "tall" },
 	utils.f3_mirror {
-		src = { gui_scale = 1, line = 0, x = -37, w = 49 }, -- <- replace gui_scale if your resolution is 4k+
+		src = { gui_scale = 1, line = 0, x = -37, w = 49 }, -- e counter on the right
+		-- src = { gui_scale = 1, line = 0, x = 1, w = 49 }, -- e counter on the left
 		dst = { pos_anchor = "right", item_anchor = "bottom", x = -272, scale = 4 },
 		sx = 4, sy = 4, depth = 2
 	}
@@ -42,11 +43,18 @@ options.objects.pie_chart = {
 		dst = { anchor = "bottomright", scale = 2 },
 		shader = "pie_chart_modern", shadow = { shader = "pie_chart_modern_shadow" }
 	},
+
+	-- alternative without [FILTER]
+	-- utils.make_mirror {
+	-- 	src = { anchor = "bottomright", w = 270, h = 0.25 },
+	-- 	dst = { anchor = "bottomright", scale = 2 }
+	-- },
+
+	-- preemptive %
 	utils.text_mirror {
 		src = { anchor = "bottomright", w = 25, h = 7, y = -146, x = -11 }, -- <- you will have to multiple some values if your gui_scale > 1
 		dst = { pos_anchor = "right", item_anchor = "top", x = -272, scale = 4 },
-		shader = "default", color_key = { input = "#ffffff", output = "#ffffff" },
-		shadow = { shader = "default", color_key = { input = "#ffffff", output = "000000D8" } }
+		shader = "pie_chart_modern", shadow = { shader = "pie_chart_modern_shadow" }
 	},
 }
 
