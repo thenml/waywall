@@ -59,21 +59,25 @@ write_state() {
 
 write_state
 
-coproc WATCHER {
-    exec inotifywait -m -q -e close_write,create,modify,move "$FILE"
+watch() {
+    inotifywait -m -q -e close_write,create,modify,move "$FILE" |
+    while read -r _; do
+        write_state
+    done
 }
 
-while read -r _ <&"${WATCHER[0]}"; do
-    write_state &
-done &
+watch &
+watcher=$!
 
-reader=$!
+cleanup() {
+    kill "$watcher" 2>/dev/null || true
+    wait "$watcher" 2>/dev/null || true
+}
+
+trap cleanup EXIT INT TERM
 
 "$@"
 status=$?
-
-kill "$reader" "${WATCHER_PID}" 2>/dev/null
-wait "$reader" 2>/dev/null
 
 rm -f "$mod"
 
