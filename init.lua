@@ -247,7 +247,7 @@ if options.safe_guards.macro then
 end
 
 waywall.listen("load", function()
-    waywall.set_resolution(0, 0)
+    pcall(waywall.set_resolution, 0, 0) -- minecraft window doesn't exist at this point when launching
     res_disable()
     waywall.sleep(5000)
     on_launch()
