@@ -6,7 +6,7 @@ local utils = require("utils")
 -- # ##############################################################################
 -- #
 -- # 	This is the generic config that will be used for all profiles.
--- # 	If you are looking to change it ONLY for modern versions (draftout),
+-- # 	If you are looking to change it ONLY for modern versions (ex. draftout),
 -- # 	go to ./profiles/draftout.lua, which will only PATCH / add onto these options
 -- #
 -- # 	Any Lua Language Server extension is recommended
@@ -119,7 +119,7 @@ local options = {
 		-- [STATE OUTPUT] requires https://github.com/tildejustin/state-output / https://github.com/DuncanRuns/Hermes with compat script
 		state_output = true,
 
-		-- [FILTER] to disable filters as proposed in the filter ban
+		-- [FILTER] to disable filters as proposed in the filter ban (see https://discord.com/channels/83066801105145856/416677682290491403/1494468798235807765 in javacord)
 		-- requires relaunch of waywall
 		filter = true,
 
@@ -162,7 +162,7 @@ local options = {
 		---@field auto_disable? boolean will this get disabled when paused or in chat? [STATE OUTPUT]
 		---@field animate? boolean use Char's resize animations https://github.com/char3210/resize_animation/blob/main/resize_animation_waywall.py
 		---@field defer? boolean defer the creation of resolution to be able to use sizes of other resolutions
-		---@field size number|{h: number|string, w:number|string} the resolution
+		---@field size number|{h: number|string, w:number|string} the resolution. uses screen.lua for sizing
 		---@see Action
 
 
@@ -418,7 +418,6 @@ local options = {
 			utils.make_mirror {
 				src = { x = 0, y = 0, w = 30, h = 580 }, -- set w to overlay width from https://qmaxxen.github.io/overlay-gen/more-options/
 				dst = { pos_anchor = "left", w = overlay_w, h = overlay_h, x = (screen_width - thin_w) / 4 },
-				-- fill_side makes the width take the space between the edge of the screen and the edge of the game
 			},
 			utils.make_image {
 				path = path.overlay,
@@ -515,7 +514,7 @@ local options = {
 	},
 
 
-	-- [MACRO] to quickly launch mpk.
+	-- [MACRO] to quickly launch mpk
 	-- ! WARNING: there are little to none safeguards in place, and this can do unexpected actions if not used on 1.16.1
 	---@class mpk
 	mpk = {

@@ -41,7 +41,9 @@ done!
 
 ## hermes state output setup
 
-enable experimental scipt that watches hermes `state.json` and converts it to a `wpstateoutput.txt` that waywall can read. also creates a dummy `fakestateoutput.jar` mod to trick waywall into reading the state
+enable experimental script that watches hermes `state.json` and converts it to a `wpstateoutput.txt` that waywall can read. also creates a dummy `fake_stateoutput_for_waywall_hermes_compat.jar` file to trick waywall into reading the state
+
+only use this if you are absolutelly sure you need it and know what it does
 
 put `bash /home/$USER/.config/waywall/scripts/hermes-compat.sh` **before** the waywall wrapper
 
@@ -53,5 +55,5 @@ done!
 
 ![preemptive](./screenshots/preemptive.png)
 ![glowdar](./screenshots/glowdar.png)
-![eye-measure-19x10](./screenshots/eye-measure-19x10.png)
+![eye-measure-16x10](./screenshots/eye-measure-16x10.png)
 ![preemptive-modern](./screenshots/preemptive-modern.png)

@@ -19,8 +19,9 @@ fi
 # create fake mod to hijack
 # https://github.com/tesselslate/waywall/blob/d53c2e42f5f28dd19b3b47c7d79a562e6c790e00/waywall/instance.c#L77
 # tbf this was easier than making a pr .w.
+# see also: https://discord.com/channels/1095808506239651942/1424239072104153138/1524503747437264937
 root="dev/tildejustin/stateoutput"
-mod="$INST_MC_DIR/mods/fakestateoutput.jar"
+mod="$INST_MC_DIR/mods/fake_stateoutput_for_waywall_hermes_compat.jar"
 
 rm -rf dev
 rm -f "$mod"
