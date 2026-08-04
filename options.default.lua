@@ -7,7 +7,7 @@ local config_path = os.getenv("HOME") .. "/.config/waywall/"
 local tools_path = os.getenv("HOME") .. "/.config/waywall/tools/"
 
 
--- paths to files. you can modify and remove home_path and config_path, they are provided only for convenience
+-- paths to files. you can modify and remove tools_path and config_path, they are provided only for convenience
 -- also available in options.path
 local path = {
 	tools          = tools_path,
