@@ -1,4 +1,4 @@
 {
-	"Lua.diagnostics.disable": ["need-check-nil", "different-requires"],
+	"Lua.diagnostics.disable": ["need-check-nil", "different-requires", "duplicate-doc-field"],
 	"Lua.runtime.version": "LuaJIT"
 }

@@ -1,8 +1,8 @@
 --------------------------------------------------------------------------------
 -- # screen layout helpers
 --
--- this module provides resolution-independent layout for mirrors, images and
--- text. layouts are described declaratively using anchors, offsets and sizes,
+-- this module provides resolution-independent layout for mirrors, images and text.
+-- layouts are described declaratively using anchors, offsets and sizes,
 -- then resolved into absolute pixel rectangles.
 --
 -- # Position
@@ -13,6 +13,7 @@
 --
 --   - pos_anchor  - the reference point on the canvas
 --   - item_anchor - the point on the item that is aligned to the reference
+--   - anchors     - shorthand for both pos_anchor and item_anchor
 --
 -- both default to "middle".
 --
@@ -40,7 +41,7 @@
 --
 --       w = 0.5
 --
---   - an automatic sizing function:
+--   - an automatic sizing function (registered with function screen.auto.{function}(canvas) ):
 --
 --       w = "fill_side"
 

@@ -7,6 +7,7 @@ import os
 import sys
 import re
 import requests
+import shutil
 
 
 def load_config():
@@ -120,38 +121,57 @@ def make_circle(size, border, scale, rgb, out):
 		f.write(png)
 
 
+def notice():
+	return """
+-- # ##############################################################################
+-- #
+-- # 	This is the generic config that will be used for all profiles.
+-- # 	If you are looking to change it ONLY for modern versions (ex. draftout),
+-- # 	go to ./profiles/draftout.lua, which will only PATCH / add onto these options
+-- #
+-- # 	Any Lua Language Server extension is recommended
+-- #
+-- # ##############################################################################
+
+"""
+
+
 def download(repo, file_pattern, download_dir):
-    url = f"https://api.github.com/repos/{repo}/releases/latest"
+	url = f"https://api.github.com/repos/{repo}/releases/latest"
 
-    response = requests.get(url)
-    response.raise_for_status()
+	response = requests.get(url)
+	response.raise_for_status()
 
-    release = response.json()
+	release = response.json()
 
-    for asset in release["assets"]:
-        if re.match(file_pattern, asset["name"]):
-            file_name = asset["name"]
-            output_path = os.path.join(download_dir, file_name)
+	for asset in release["assets"]:
+		if re.match(file_pattern, asset["name"]):
+			file_name = asset["name"]
+			output_path = os.path.join(download_dir, file_name)
 
-            os.makedirs(download_dir, exist_ok=True)
+			os.makedirs(download_dir, exist_ok=True)
 
-            print(f"Downloading {file_name}...")
-            with requests.get(asset["browser_download_url"], stream=True) as r:
-                r.raise_for_status()
+			print(f"Downloading {file_name}...")
+			with requests.get(asset["browser_download_url"], stream=True) as r:
+				r.raise_for_status()
 
-                with open(output_path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        f.write(chunk)
+				with open(output_path, "wb") as f:
+					for chunk in r.iter_content(chunk_size=8192):
+						f.write(chunk)
 
-            print(f"Saved to {output_path}")
-            return output_path
+			print(f"Saved to {output_path}")
+			return output_path
 
-    raise FileNotFoundError(
-        f"No release asset matching '{file_pattern}' found."
-    )
+	raise FileNotFoundError(
+		f"No release asset matching '{file_pattern}' found."
+	)
 
 
 def main():
+	with open("options.lua", "r", encoding="utf-8") as f:
+		if not "waywall" in f.read():
+			shutil.copy("options.default.lua", "options.lua")
+
 	cfg = load_config()
 
 	if not cfg:
@@ -180,7 +200,7 @@ def main():
 
 		cfg["border"] = prompt("Border size\n[5]", eval) or 5
 
-		cfg["overlay_w"] = prompt("Measuring overlay width in pixels / % width of the side\n[100%]") or "100%"
+		cfg["overlay_w"] = prompt("Measuring overlay width in pixels or % width of the side\n[100%]") or "100%"
 		cfg["overlay_h"] = prompt(f"Measuring overlay height\n[recommended: {thin_w + cfg['border'] * 2}]", eval) or (thin_w + cfg["border"] * 2)
 
 		if cfg["overlay_w"].endswith("%"):
@@ -230,6 +250,8 @@ def main():
 			text = f.read()
 		with open("options.lua.bak", "w", encoding="utf-8") as f:
 			f.write(text)
+
+		text = re.sub(r"^-- don't modify this file", notice(), text)
 
 		for name, value in cfg.items():
 			if name not in ["tools_path", "screen_width", "screen_height", "thin_w", "thin_h", "wide_w", "wide_h", "overlay_w", "overlay_h", "pie_d", "border"]:

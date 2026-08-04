@@ -10,14 +10,15 @@ options.action.chat_key2 = nil
 
 
 options.remapped_kb = {
-
+	-- put 26.1 specific remap here
 }
+
 
 options.objects.e = {
 	enabled = utils.set { "thin", "tall" },
 	utils.f3_mirror {
-		src = { gui_scale = 1, line = 0, x = -37, w = 49 }, -- e counter on the right
-		-- src = { gui_scale = 1, line = 0, x = 1, w = 49 }, -- e counter on the left
+		src = { gui_scale = 1, line = 0, x = -37, w = 49 }, -- e counter on the right (first line)
+		-- src = { gui_scale = 1, line = 0, x = 1, w = 49 }, -- e counter on the left (first line)
 		dst = { pos_anchor = "right", item_anchor = "bottom", x = -272, scale = 4 },
 		sx = 4, sy = 4, depth = 2
 	}
@@ -51,11 +52,11 @@ options.objects.pie_chart = {
 	-- },
 
 	-- preemptive %
-	utils.text_mirror {
-		src = { anchor = "bottomright", w = 25, h = 7, y = -146, x = -11 }, -- <- you will have to multiple some values if your gui_scale > 1
-		dst = { pos_anchor = "right", item_anchor = "top", x = -272, scale = 4 },
-		shader = "pie_chart_modern", shadow = { shader = "pie_chart_modern_shadow" }
-	},
+	-- utils.text_mirror {
+	-- 	src = { anchor = "bottomright", w = 25, h = 7, y = -146, x = -11 }, -- <- you will have to multiple some values if your gui_scale > 1
+	-- 	dst = { pos_anchor = "right", item_anchor = "top", x = -272, scale = 4 },
+	-- 	shader = "pie_chart_modern", shadow = { shader = "pie_chart_modern_shadow" }
+	-- },
 }
 
 
