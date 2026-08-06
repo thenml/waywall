@@ -406,7 +406,7 @@ local options = {
 		eye_measure = {
 			enabled = utils.set { "tall" },
 			utils.make_mirror {
-				src = { x = 0, y = 0, w = 60, h = 580 }, -- set w to overlay width from https://qmaxxen.github.io/overlay-gen/more-options/
+				src = { x = 0, y = 0, w = 30, h = 580 }, -- set w to overlay width from https://qmaxxen.github.io/overlay-gen/more-options/
 				dst = { pos_anchor = "left", w = overlay_w, h = overlay_h, x = (screen_width - thin_w) / 4 },
 			},
 			utils.make_image {
