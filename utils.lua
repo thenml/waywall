@@ -393,6 +393,15 @@ function utils.apply_action(cfga, action, exec, ...)
     local args = { ... }
     local n = select("#", ...)
     cfga[utils.get_key(action)] = function()
+        if action.chord then
+            if type(action.chord) == "string" and not waywall.get_key(action.chord) then
+                return false
+            else
+                for key in action.chord do
+                    if not waywall.get_key(key) then return false end
+                end
+            end
+        end
         if action.f3_safe and waywall.get_key("F3") then return false end
         if action.ingame_only and utils.has_state then
             local state = waywall.state()

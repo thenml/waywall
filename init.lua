@@ -6,6 +6,10 @@ local options = require("options")
 local utils = require("utils")
 local screen = require("screen")
 
+if options.safe_guards == nil then
+    error("WARNING: Your waywall config is not setup correctly, you should read the setup guide")
+end
+
 -- ==== HELPERS ====
 
 -- currently active remap

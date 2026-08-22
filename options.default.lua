@@ -1,4 +1,4 @@
--- don't modify this file
+-- don't modify this file if this is "options.default.lua"
 local waywall = require("waywall")
 local helpers = require("waywall.helpers")
 local utils = require("utils")
@@ -7,14 +7,13 @@ local config_path = os.getenv("HOME") .. "/.config/waywall/"
 local tools_path = os.getenv("HOME") .. "/.config/waywall/tools/"
 
 
--- paths to files. you can modify and remove tools_path and config_path, they are provided only for convenience
--- also available in options.path
+-- paths to files. also available in options.path
 local path = {
 	tools          = tools_path,
 	config         = config_path,
 	paceman        = tools_path .. "paceman-tracker-0.7.2.jar",
 	ninjabrain_bot = tools_path .. "Ninjabrain-Bot-1.5.2.jar",
-	tmp_saves      = config_path .. "scripts/tmp-saves.sh",
+	oneshot        = config_path .. "images/oneshot_crosshair.png",
 	overlay        = config_path .. "images/overlay.png", -- https://qmaxxen.github.io/overlay-gen/more-options/
 	overlay_border = config_path .. "images/overlay_border.png",
 	x_border       = config_path .. "images/x_border.png",
@@ -123,9 +122,10 @@ local options = {
 
 	-- configure your sensitivity for different resolutions here.
 	-- resolutions use the same name as in options.res
+	-- https://tesselslate.github.io/waywall/01_options_input.html#mouse-sensitivity
 	---@type {_use_maccel: boolean, _normal: number, [string]: number}
 	sens = {
-		-- use raw_input with maccel
+		-- use raw_input with maccel, you usually don't need this
 		_use_maccel = false,
 
 		-- resolutions
@@ -135,11 +135,13 @@ local options = {
 
 
 	-- https://tesselslate.github.io/waywall/01_options_input.html#input-remapping
+	-- change your keyboard remaps here
+	-- to disable changing a remap based on state, replace the block with nil
 	remapped_kb = {
-		-- add any remaps you want
+		-- add any ingame remaps you want
 	},
 	normal_kb = {
-		-- add any remaps you want to keep when disabling normal remaps (not necessary)
+		-- add any chat/title remaps you want
 	},
 
 
@@ -153,7 +155,7 @@ local options = {
 		---@field animate? boolean use Char's resize animations https://github.com/char3210/resize_animation/blob/main/resize_animation_waywall.py
 		---@field defer? boolean defer the creation of resolution to be able to use sizes of other resolutions
 		---@field size number|{h: number|string, w:number|string} the resolution. uses screen.lua for sizing
-		---@see Action
+		---@see Action -- also has fields from actions like chord, ingame_only, f3_safe, consume_input
 
 
 		thin = {
@@ -201,6 +203,7 @@ local options = {
 	action = {
 		---@class Action
 		---@field key string keysym action (https://tesselslate.github.io/waywall/03_lookup_tables.html#keysyms)
+		---@field chord? string|string[] extra key/keys that should be held to enable binds such as tab+b. uses keycodes (https://tesselslate.github.io/waywall/03_lookup_tables.html#keycodes)
 		---@field ingame_only? boolean will this only work when ingame? (not paused or in chat) [STATE OUTPUT]
 		---@field f3_safe? boolean will this be disabled when using an f3 bind?
 		---@field consume_input? boolean will this consume the input? nil uses the function output
@@ -214,8 +217,8 @@ local options = {
 
 		-- disable remaps when pressing the chat keys, can desync if not using [STATE OUTPUT]
 		-- some keys have different names in keysyms and keycodes https://tesselslate.github.io/waywall/03_lookup_tables.html#keycodes
-		-- for those, use {"keysym", "keycode"}
-		chat_key1 = { "Return", "Enter" },
+		-- for those, use {"keysym", "keycode"} (like for Enter: { "Return", "Enter" })
+		chat_key1 = "T",
 		chat_key2 = "Slash",
 		-- chat_key1 = "Insert", chat_key2 = nil -- alternative for when not using [STATE OUTPUT]
 
@@ -280,6 +283,8 @@ local options = {
 
 				exec = function(options)
 					if not waywall.get_key("F3") then return false end
+					-- dont activate if ninbot is already shown via keybind
+					if waywall.floating_shown() and (options.var.hide_ms or 0) <= waywall.current_time() then return false end
 
 					waywall.press_key("C")
 					waywall.show_floating(true)
@@ -301,6 +306,7 @@ local options = {
 			},
 
 
+			-- show available keybinds, you can safely remove this
 			show_keybinds = {
 				key = "Shift-I",
 
@@ -311,7 +317,7 @@ local options = {
 							"toggle ninbot: " .. utils.get_key(options.action.toggle_ninbot, "none") .. "\n" ..
 							"on_launch functions: " .. utils.get_key(options.action.on_launch, "none") .. "\n" ..
 							"toggle remaps: " .. utils.get_key(options.action.chat_key1, "none") ..
-							", " .. utils.get_key(options.action.chat_key2, "none") .. "\n" ..
+							", " .. utils.get_key(options.action.chat_key2, "") .. "\n" ..
 							"mpk launch: " .. utils.get_key(options.mpk.launch_key, "none") .. "\n" ..
 							"mpk quit: " .. utils.get_key(options.mpk.quit_key, "none") .. "\n" ..
 							"\n-resolutions-\n"
@@ -321,6 +327,16 @@ local options = {
 						text = text .. "\n-extras-\n"
 						for name, res in pairs(options.action.extra) do
 							text = text .. name .. ": " .. res.key .. "\n"
+						end
+						text = text .. "\n-objects-\n"
+						for name, obj in pairs(options.objects) do
+							if obj.action ~= nil then
+								if type(obj.action) == "string" then
+									text = text .. name .. ": " .. obj.action .. "\n"
+								else
+									text = text .. name .. ": " .. obj.action.key .. "\n"
+								end
+							end
 						end
 						if waywall.profile() then
 							text = "active profile: " .. waywall.profile() .. "\n\n" .. text
@@ -490,7 +506,14 @@ local options = {
 			-- },
 		},
 
-		-- technically these are just extra_actions with resolution support
+		oneshot = {
+			action = "Shift-U",
+
+			utils.make_image {
+				path = path.oneshot,
+				dst = { w = 100, h = 100 }
+			},
+		},
 
 		-- extend here
 
@@ -500,6 +523,14 @@ local options = {
 		-- 		src = { gui_scale = 3, line = 11, x = 33, w = 88 },
 		-- 		dst = "src", -- copy position from src
 		-- 	},
+		-- }
+
+		-- local_difficulty = {
+		-- 	enabled = utils.set { "_normal" },
+		-- 	utils.f3_mirror {
+		-- 		src = { gui_scale = 3, line = 19, x = 124, w = 24 },
+		-- 		dst = { pos_anchor = "bottom", y = -150, w = 33, h = 7, scale = 1 }
+		-- 	}
 		-- }
 	},
 

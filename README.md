@@ -15,9 +15,12 @@ loosely based on gore's barebones and soup's configs
 - ★ patching options with profiles
 - ★ quick setup script
 - ★ disable remap in chat
+- ★ f3 safe, ingame_only, chord support for actions
 - tall/thin/wide and more
-- f3 text, pie, glowdar mirrors
-- mirror borders
+- autohide ninjabrain bot
+- f3 text, pie, glowdar mirrors included
+- oneshot crosshair action
+- configurable borders
 - mpk quickbind
 
 ## setup
@@ -31,7 +34,7 @@ loosely based on gore's barebones and soup's configs
    ```bash
    git clone https://github.com/thenml/waywall-config.git ~/.config/waywall
    ```
-2. run `python3 setup.py`
+2. run `python3 setup.py` OR `rm options.lua; cp options.default.lua options.lua`
 
 done! (now go fully read the options)
 

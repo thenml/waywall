@@ -251,7 +251,7 @@ def main():
 		with open("options.lua.bak", "w", encoding="utf-8") as f:
 			f.write(text)
 
-		text = re.sub(r"^-- don't modify this file", notice(), text)
+		text = re.sub(r"^don't modify this file if this is \"options.default.lua\"", notice(), text)
 
 		for name, value in cfg.items():
 			if name not in ["tools_path", "screen_width", "screen_height", "thin_w", "thin_h", "wide_w", "wide_h", "overlay_w", "overlay_h", "pie_d", "border"]:
